@@ -1,6 +1,36 @@
 import pygame
 import sys
+import time
 from pygame.locals import *
+
+
+class TimeTracking:
+    def __init__(self, number_of_seconds, boom):
+        self.number_of_seconds = number_of_seconds
+        self.time_at_the_moment = time.time()
+        self.boom = boom
+
+    def time_up(self):
+        """
+        Check to see if the amount of self.time seconds has passed
+        """
+        self.boom.leave_boom()
+        if time.time() - self.time_at_the_moment >= self.number_of_seconds:
+            return True
+        else:
+            return False
+
+    def get_boom(self):
+        return self.boom
+
+    def trigger(self):
+        """
+        Explode the bomb after time is up
+        """
+        if self.time_up():
+            self.boom.explode()
+            return True
+        return False
 
 
 class EventLogic:
@@ -9,20 +39,27 @@ class EventLogic:
         self._game_gui = _game_gui
         self._game_logic = _game_logic
         self._sound = _sound
+        self.number_of_handler_executions = 0
         self.movement = {
             K_UP: "up",
             K_DOWN: "down",
             K_RIGHT: "right",
             K_LEFT: "left"
         }
+        self.time_trackers = []
 
     def quit(self):
         pygame.quit()
         sys.exit()
 
     def event_handler(self):
-        event = pygame.event.poll()
+        for time_tracker in self.time_trackers:
+            if time_tracker.trigger():
+                self.time_trackers.remove(time_tracker)
+            else:
+                time_tracker.get_boom().leave_boom()
 
+        event = pygame.event.poll()
         if event.type == MOUSEBUTTONUP:
             if self._game_state.get_state() == "welcome":
                 if self._game_gui.new.get_rect().collidepoint(event.pos):
@@ -31,10 +68,11 @@ class EventLogic:
                     pygame.display.update()
 
         elif event.type == MOUSEMOTION or event.type == NOEVENT:
-            self._game_gui.draw(self._game_state.get_state())
-            for button in self._game_gui.buttons:
-                button.set_bold(pygame.mouse.get_pos())
-            pygame.display.update()
+            if self._game_gui.buttons:
+                self._game_gui.draw(self._game_state.get_state())
+                for button in self._game_gui.buttons:
+                    button.set_bold(pygame.mouse.get_pos())
+                pygame.display.update()
 
         elif event.type == pygame.QUIT:
             self.quit()
@@ -45,7 +83,7 @@ class EventLogic:
                 self.quit()
 
             elif event.key in [K_UP, K_DOWN, K_LEFT, K_RIGHT]:
-                for sprite in self._game_gui.sprites:
+                for sprite in self._game_gui.characters:
                     sprite.increment_pos(self.movement[event.key])
                     self._game_gui.draw("new game")
                     pygame.display.update()
@@ -53,3 +91,9 @@ class EventLogic:
                     sprite.increment_pos(self.movement[event.key])
                     self._game_gui.draw("new game")
                     pygame.display.update()
+
+            elif event.key == K_SPACE:
+                boom = self._game_gui.create_boom(self._game_gui.characters[0].get_pos())
+                boom_trigger = TimeTracking(2, boom)
+                self.time_trackers.append(boom_trigger)
+                pygame.display.update()

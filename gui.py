@@ -1,6 +1,5 @@
 import pygame
-import sys
-import collections
+import threading
 
 
 class GameGUI:
@@ -10,7 +9,7 @@ class GameGUI:
         self.state = _game_state
         self.logic = _game_logic
         self.sprite_sheet = pygame.image.load("assets\images\sprites_2.png")
-        self.sprites = []
+        self.characters = []
         self.window_width = 900
         self.window_height = 600
         self.font_size = 30
@@ -49,18 +48,15 @@ class GameGUI:
 
     def draw_map(self, sprite):
         """
-        Draw the number tiles
+        Draw the background
         """
         size = 30
         for index_x in range(0, self.window_width, size):
             for index_y in range(0, self.window_height, size):
                 self.display_surface.blit(sprite.get_img(), tuple([index_x, index_y]))
 
-    def configure_difficulty(self, pos):
-        """
-        Changing position of the circle indicating new difficulty
-        """
-        self.pos = pos
+    def create_boom(self, pos):
+        return Boom(pos, self.sprite_sheet, {"boom": (120, 0), "explosion": (0, 0)}, self.display_surface)
 
     def draw(self, state):
         """
@@ -86,15 +82,16 @@ class GameGUI:
             self.display_surface.blit(self.author.get_sr()[0], self.author.get_sr()[1])
 
         elif state == "new game":
-            if not self.sprites:
-                self.main_character = Sprite([self.window_width/2, self.window_height/2], self.sprite_sheet, {"up": (240, 0),
+            if not self.characters:
+                self.main_character = Character([self.window_width/2, self.window_height/2], self.sprite_sheet, {"up": (240, 0),
                                                                                                               "down": (180, 0),
                                                                                                               "left": (360, 0),
                                                                                                               "right": (300, 0)})
-            self.sprites = [self.main_character]
+            self.characters = [self.main_character]
             self.buttons = []
             self.draw_map(Sprite(None, self.sprite_sheet, {"down": (30, 0)}))
             self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
+            #self.display_surface.blit()
 
 
 class Button:
@@ -142,23 +139,60 @@ class Button:
             self.gui.display_surface.blit(self.surf, self.rect)
 
 
+class Boom:
+    def __init__(self, pos, sheet, loc_in_sheet, surface, extra_explode=0):
+        self.pos = pos
+        self.sheet = sheet
+        self.loc_in_sheet = loc_in_sheet
+        self.time_counting = 2000  # the time in ms that the bomb will explode after trigger
+        self.surface = surface
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["boom"][0], self.loc_in_sheet["boom"][1], 30, 30))
+        self.boom_sprite = self.sheet.subsurface(self.sheet.get_clip())
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["explosion"][0], self.loc_in_sheet["explosion"][1], 30, 30))
+        self.explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
+        self.extra_explode = extra_explode  # by default, a boom will explode to 4 sides with the length of 2 tiles
+
+    def get_img(self):
+        return self.boom_sprite
+
+    def get_pos(self):
+        return self.pos
+
+    def update_pos(self, new_pos):
+        self.pos = new_pos
+
+    def leave_boom(self):
+        self.surface.blit(self.boom_sprite, self.pos)
+        pygame.display.update()
+
+    def explode(self):
+        for index in [0, -1, 1, -2, 2]:
+            self.surface.blit(self.explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
+            self.surface.blit(self.explode_sprite, tuple([self.pos[0]+30*index, self.pos[1]]))
+        pygame.display.update()
+
+
 class Sprite:
     def __init__(self, pos, sheet, loc_in_sheet):
         self.sheet = sheet
         self.loc_in_sheet = loc_in_sheet  # a dictionary keeping track of each movement and their sprites
-
-        self.map = {                      # a dictionary helping choose which img to display according to the movement
-            "up":    [[-1], [0]],
-            "down":  [[-1], [0]],
-            "left":  [[-1], [0]],
-            "right": [[-1], [0]]
-        }
         self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["down"][0], self.loc_in_sheet["down"][1], 30, 30))
         self.img = self.sheet.subsurface(self.sheet.get_clip())
         self.pos = pos
 
     def get_img(self):
         return self.img
+
+
+class Character(Sprite):
+    def __init__(self, pos, sheet, loc_in_sheet):
+        Sprite.__init__(self, pos, sheet, loc_in_sheet)
+        self.map = {                      # a dictionary helping choose which img to display according to the movement
+            "up":    [[-1], [0]],
+            "down":  [[-1], [0]],
+            "left":  [[-1], [0]],
+            "right": [[-1], [0]]
+        }
 
     def update_img(self, direction):
         self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[direction][0]+30*self.map[direction][0].pop(),
@@ -179,7 +213,7 @@ class Sprite:
             self.map[direction][1].append(-1)
 
     def get_pos(self):
-        return self.pos
+        return tuple(self.pos)
 
     def increment_pos(self, direction):
         if direction == "up":
