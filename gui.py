@@ -9,10 +9,10 @@ class GameGUI:
         self.buttons = []  # keeping track of number of buttons according to each scene (state)
         self.state = _game_state
         self.logic = _game_logic
-        self.sprite_sheet = pygame.image.load("assets\images\sprites.png")
+        self.sprite_sheet = pygame.image.load("assets\images\sprites_2.png")
         self.sprites = []
-        self.window_width = 1180
-        self.window_height = 700
+        self.window_width = 900
+        self.window_height = 600
         self.font_size = 30
         self.x_margin = 78
         self.y_margin = 150
@@ -30,7 +30,7 @@ class GameGUI:
         self.tile_color_for_numbers = self.colors["light green"]
         self.text_color_for_numbers = self.colors["navy"]
         self.text_color = self.colors["red"]
-        self.bg_color = self.colors["white"]
+        self.bg_color = self.colors["green"]
         self.tile_color = self.bg_color
         self.display_surface = pygame.display.set_mode((self.window_width, self.window_height))
         pygame.display.set_caption("Boom")
@@ -47,22 +47,14 @@ class GameGUI:
         text_rect.center = center
         return text_surf, text_rect
 
-    def draw_tile(self, number, index):
+    def draw_map(self, sprite):
         """
         Draw the number tiles
         """
-        size = 40
-        space = 1
-        position = (self.x_margin+(size+space)*index, self.y_margin*2)
-        self.logic.update_fl()
-        if index in self.logic.first_last:
-            pygame.draw.rect(self.display_surface, self.colors["green"], (position[0], position[1], size, size))
-        else:
-            pygame.draw.rect(self.display_surface, self.tile_color_for_numbers, (position[0], position[1], size, size))
-        text_sur = self.font.render(str(number), True, self.text_color)
-        text_rect = text_sur.get_rect()
-        text_rect.center = (position[0]+size/2, position[1]+size/2)
-        self.display_surface.blit(text_sur, text_rect)
+        size = 30
+        for index_x in range(0, self.window_width, size):
+            for index_y in range(0, self.window_height, size):
+                self.display_surface.blit(sprite.get_img(), tuple([index_x, index_y]))
 
     def configure_difficulty(self, pos):
         """
@@ -101,6 +93,7 @@ class GameGUI:
                                                                                                               "right": (300, 0)})
             self.sprites = [self.main_character]
             self.buttons = []
+            self.draw_map(Sprite(None, self.sprite_sheet, {"down": (30, 0)}))
             self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
 
 
