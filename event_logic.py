@@ -5,10 +5,11 @@ from pygame.locals import *
 
 
 class TimeTracking:
-    def __init__(self, number_of_seconds, boom):
+    def __init__(self, number_of_seconds, boom, _game_state):
         self.number_of_seconds = number_of_seconds
         self.time_at_the_moment = time.time()
         self.boom = boom
+        self.state = _game_state
 
     def time_up(self):
         """
@@ -29,6 +30,7 @@ class TimeTracking:
         """
         if self.time_up():
             self.boom.explode()
+            self.state.track_players(self.boom.get_pos())
             return True
         return False
 
@@ -77,23 +79,26 @@ class EventLogic:
         elif event.type == pygame.QUIT:
             self.quit()
 
-        elif event.type == KEYUP:
+        elif event.type == KEYDOWN:
             if event.key == K_ESCAPE:
                 self._sound.play_beep()
                 self.quit()
 
             elif event.key in [K_UP, K_DOWN, K_LEFT, K_RIGHT]:
-                for sprite in self._game_gui.characters:
-                    sprite.increment_pos(self.movement[event.key])
-                    self._game_gui.draw("new game")
-                    pygame.display.update()
+                while pygame.key.get_pressed()[event.key]:
+                    for sprite in self._game_gui.get_characters():
+                        sprite.increment_pos(self.movement[event.key])
+                        self._game_gui.draw("new game")
+                        pygame.display.update()
+                        pygame.time.wait(100)
+                        sprite.increment_pos(self.movement[event.key])
+                        self._game_gui.draw("new game")
+                        pygame.display.update()
                     pygame.time.wait(100)
-                    sprite.increment_pos(self.movement[event.key])
-                    self._game_gui.draw("new game")
-                    pygame.display.update()
+                    self.event_handler()
 
             elif event.key == K_SPACE:
                 boom = self._game_gui.create_boom(self._game_gui.characters[0].get_pos())
-                boom_trigger = TimeTracking(2, boom)
+                boom_trigger = TimeTracking(2, boom, self._game_state)
                 self.time_trackers.append(boom_trigger)
                 pygame.display.update()

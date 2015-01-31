@@ -1,5 +1,4 @@
 import pygame
-import threading
 
 
 class GameGUI:
@@ -29,13 +28,14 @@ class GameGUI:
         self.tile_color_for_numbers = self.colors["light green"]
         self.text_color_for_numbers = self.colors["navy"]
         self.text_color = self.colors["red"]
-        self.bg_color = self.colors["green"]
+        self.bg_color = self.colors["turquoise blue"]
         self.tile_color = self.bg_color
         self.display_surface = pygame.display.set_mode((self.window_width, self.window_height))
         pygame.display.set_caption("Boom")
         self.font = pygame.font.Font("assets\\fonts\Cutie Patootie Skinny.ttf", self.font_size)
         self.font_bold = pygame.font.Font("assets\\fonts\Cutie Patootie.ttf", self.font_size)
         self.pos = (self.window_width/2, self.window_height/2)  # for configuring game difficulty
+        self.dummy_var = 0  # serves as a way to make blinking animation when the player loses all the lives
 
     def make_text(self, text, color, bg_color, center):
         """
@@ -57,6 +57,9 @@ class GameGUI:
 
     def create_boom(self, pos):
         return Boom(pos, self.sprite_sheet, {"boom": (120, 0), "explosion": (0, 0)}, self.display_surface)
+
+    def get_characters(self):
+        return self.characters
 
     def draw(self, state):
         """
@@ -86,12 +89,25 @@ class GameGUI:
                 self.main_character = Character([self.window_width/2, self.window_height/2], self.sprite_sheet, {"up": (240, 0),
                                                                                                               "down": (180, 0),
                                                                                                               "left": (360, 0),
-                                                                                                              "right": (300, 0)})
+                                                                                                              "right": (300, 0)}, self)
             self.characters = [self.main_character]
             self.buttons = []
-            self.draw_map(Sprite(None, self.sprite_sheet, {"down": (30, 0)}))
-            self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
-            #self.display_surface.blit()
+            self.draw_map(Sprite(None, self.sprite_sheet, {"down": (30, 0)}, self))
+            self.state.update_players()
+            lives_sur, lives_rect = self.make_text(str(self.state.get_players()[0].get_lives()), self.text_color,
+                                                       self.tile_color, (self.window_width-60, self.window_height-550))
+            self.display_surface.blit(lives_sur, lives_rect)
+            if self.state.get_players()[0].get_lives() >= 0:
+                self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
+            else:
+                pygame.time.wait(100)
+                if self.dummy_var % 2 == 0:
+                    self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
+                if self.dummy_var == 5:
+                    self.dummy_var = 0
+                    self.state.get_players()[0].reset_lives()
+                self.dummy_var += 1
+
 
 
 class Button:
@@ -173,20 +189,21 @@ class Boom:
 
 
 class Sprite:
-    def __init__(self, pos, sheet, loc_in_sheet):
+    def __init__(self, pos, sheet, loc_in_sheet, _game_gui):
         self.sheet = sheet
         self.loc_in_sheet = loc_in_sheet  # a dictionary keeping track of each movement and their sprites
         self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["down"][0], self.loc_in_sheet["down"][1], 30, 30))
         self.img = self.sheet.subsurface(self.sheet.get_clip())
         self.pos = pos
+        self.gui = _game_gui
 
     def get_img(self):
         return self.img
 
 
 class Character(Sprite):
-    def __init__(self, pos, sheet, loc_in_sheet):
-        Sprite.__init__(self, pos, sheet, loc_in_sheet)
+    def __init__(self, pos, sheet, loc_in_sheet, _game_gui):
+        Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
         self.map = {                      # a dictionary helping choose which img to display according to the movement
             "up":    [[-1], [0]],
             "down":  [[-1], [0]],
@@ -216,19 +233,19 @@ class Character(Sprite):
         return tuple(self.pos)
 
     def increment_pos(self, direction):
-        if direction == "up":
+        if direction == "up" and self.pos[1] > 0:
             self.pos[1] -= 15
             self.update_img(direction)
             self.update_map(direction)
-        elif direction == "down":
+        elif direction == "down" and self.pos[1] < self.gui.window_height-30:
             self.pos[1] += 15
             self.update_img(direction)
             self.update_map(direction)
-        elif direction == "left":
+        elif direction == "left" and self.pos[0] > 0:
             self.pos[0] -= 15
             self.update_img(direction)
             self.update_map(direction)
-        elif direction == "right":
+        elif direction == "right" and self.pos[0] < self.gui.window_width-30:
             self.pos[0] += 15
             self.update_img(direction)
             self.update_map(direction)
