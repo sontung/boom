@@ -36,6 +36,7 @@ class GameGUI:
         self.font_bold = pygame.font.Font("assets\\fonts\Cutie Patootie.ttf", self.font_size)
         self.pos = (self.window_width/2, self.window_height/2)  # for configuring game difficulty
         self.dummy_var = 0  # serves as a way to make blinking animation when the player loses all the lives
+        self.done_blinking_animation = False  # serves as a var to keep track if we've done the blinking animation or not
 
     def make_text(self, text, color, bg_color, center):
         """
@@ -60,6 +61,9 @@ class GameGUI:
 
     def get_characters(self):
         return self.characters
+
+    def set_doneBlinkingAnimation(self, val):
+        self.done_blinking_animation = val
 
     def draw(self, state):
         """
@@ -97,17 +101,28 @@ class GameGUI:
             lives_sur, lives_rect = self.make_text(str(self.state.get_players()[0].get_lives()), self.text_color,
                                                        self.tile_color, (self.window_width-60, self.window_height-550))
             self.display_surface.blit(lives_sur, lives_rect)
-            if self.state.get_players()[0].get_lives() >= 0:
+            if self.state.get_players()[0].get_lives() == 3:
                 self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
+            elif self.state.get_players()[0].get_lives() >= 0:
+                print self.dummy_var
+                if not self.done_blinking_animation:
+                    pygame.time.wait(100)
+                    if self.dummy_var % 2 == 0:
+                        self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
+                    if self.dummy_var == 5:
+                        self.dummy_var = 0
+                        self.set_doneBlinkingAnimation(True)
+                    self.dummy_var += 1
+                else:
+                    self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
             else:
                 pygame.time.wait(100)
                 if self.dummy_var % 2 == 0:
                     self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
-                if self.dummy_var == 5:
+                if self.dummy_var == 9:
                     self.dummy_var = 0
                     self.state.get_players()[0].reset_lives()
                 self.dummy_var += 1
-
 
 
 class Button:

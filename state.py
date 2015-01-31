@@ -50,6 +50,7 @@ class GameState:
         for player in self.players:
             if self.if_near_boom(player.get_char().get_pos(), boom_pos):
                 player.update_lives(-1)
+                self.gui.set_doneBlinkingAnimation(False)
 
 
 class PlayerState:

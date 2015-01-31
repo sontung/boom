@@ -5,7 +5,7 @@ import event_logic
 
 if __name__ == "__main__":
     game_state = state.GameState()
-    game_state.set_state("new game")
+    #game_state.set_state("new game")
     game_gui = gui.GameGUI(None, game_state)
     game_state.add_gui(game_gui)
     game_event_handler = event_logic.EventLogic(game_state, game_gui)
