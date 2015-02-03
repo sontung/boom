@@ -14,6 +14,7 @@ class GameGUI:
         self.font_size = 30
         self.x_margin = 78
         self.y_margin = 150
+        self.map = None
         self.colors = {"white": (255, 255, 255),
                        "black": (41, 36, 33),
                        "navy": (0, 0, 128),
@@ -46,15 +47,6 @@ class GameGUI:
         text_rect = text_surf.get_rect()
         text_rect.center = center
         return text_surf, text_rect
-
-    def draw_map(self, sprite):
-        """
-        Draw the background
-        """
-        size = 30
-        for index_x in range(0, self.window_width, size):
-            for index_y in range(0, self.window_height, size):
-                self.display_surface.blit(sprite.get_img(), tuple([index_x, index_y]))
 
     def create_boom(self, pos):
         return Boom(pos, self.sprite_sheet, {"boom": (120, 0), "explosion": (0, 0)}, self.display_surface)
@@ -94,9 +86,18 @@ class GameGUI:
                                                                                                               "down": (180, 0),
                                                                                                               "left": (360, 0),
                                                                                                               "right": (300, 0)}, self)
+            if not self.map:
+                self.map = Map(self, Sprite(None, self.sprite_sheet, {"down": (30, 0)}, self))
+                for index_x in range(30, self.window_width, self.font_size*5):
+                    for index_y in range(30, self.window_height, self.font_size):
+                        self.map.add_sprites(Wall((index_x, index_y), self.sprite_sheet, self), "wall")
+                for index_x in range(0, self.window_width, self.font_size*9):
+                    for index_y in range(30, self.window_height, self.font_size*10):
+                        self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self), "treasure")
             self.characters = [self.main_character]
             self.buttons = []
-            self.draw_map(Sprite(None, self.sprite_sheet, {"down": (30, 0)}, self))
+            self.map.draw_background()
+            self.map.draw_sprite()
             self.state.update_players()
             lives_sur, lives_rect = self.make_text(str(self.state.get_players()[0].get_lives()), self.text_color,
                                                        self.tile_color, (self.window_width-60, self.window_height-550))
@@ -203,6 +204,62 @@ class Boom:
         pygame.display.update()
 
 
+class Map:
+    """
+    Keeping track of what can be went through.
+    """
+    def __init__(self, _game_gui, back_ground_sprite):
+        self.gui = _game_gui
+        self.walls = []
+        self.treasures = []
+        self.sprites = []
+        self.sprite_pos = []
+        self.background = back_ground_sprite
+
+    def draw_background(self):
+        size = 30
+        for index_x in range(0, self.gui.window_width, size):
+            for index_y in range(0, self.gui.window_height, size):
+                self.gui.display_surface.blit(self.background.get_img(), tuple([index_x, index_y]))
+
+    def add_sprites(self, sprite, type_of_sprite):
+        """
+        Add anything that meant to be appeared in the map like
+        walls, treasures, trees, people ... to sprites list
+        """
+        self.sprites.append(sprite)
+        self.sprite_pos.append(sprite.get_pos())
+        if type_of_sprite == "wall":
+            self.walls.append(sprite)
+        elif type_of_sprite == "treasure":
+            self.treasures.append(sprite)
+
+    def draw_sprite(self):
+        """
+        Draw anything in the sprites list
+        """
+        for sprite in self.sprites:
+            self.gui.display_surface.blit(sprite.get_img(), sprite.get_pos())
+
+    def movement_approve(self, char_pos, direction):
+        """
+        Approve the movement of the character along that direction
+        if it won't pass through any sprites.
+        """
+        if direction == "up":
+            char_pos_after_move = char_pos[0], char_pos[1]-30
+        elif direction == "down":
+            char_pos_after_move = char_pos[0], char_pos[1]+30
+        elif direction == "right":
+            char_pos_after_move = char_pos[0]+30, char_pos[1]
+        elif direction == "left":
+            char_pos_after_move = char_pos[0]-30, char_pos[1]
+        for pos in self.sprite_pos:
+            if char_pos_after_move == pos:
+                return False
+        return True
+
+
 class Sprite:
     def __init__(self, pos, sheet, loc_in_sheet, _game_gui):
         self.sheet = sheet
@@ -214,6 +271,19 @@ class Sprite:
 
     def get_img(self):
         return self.img
+
+    def get_pos(self):
+        return self.pos
+
+
+class Wall(Sprite):
+    def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (0, 0)}):
+        Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
+
+
+class Treasure(Sprite):
+    def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (90, 0)}):
+        Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
 
 
 class Character(Sprite):
@@ -248,19 +318,20 @@ class Character(Sprite):
         return tuple(self.pos)
 
     def increment_pos(self, direction):
-        if direction == "up" and self.pos[1] > 0:
-            self.pos[1] -= 15
-            self.update_img(direction)
-            self.update_map(direction)
-        elif direction == "down" and self.pos[1] < self.gui.window_height-30:
-            self.pos[1] += 15
-            self.update_img(direction)
-            self.update_map(direction)
-        elif direction == "left" and self.pos[0] > 0:
-            self.pos[0] -= 15
-            self.update_img(direction)
-            self.update_map(direction)
-        elif direction == "right" and self.pos[0] < self.gui.window_width-30:
-            self.pos[0] += 15
-            self.update_img(direction)
-            self.update_map(direction)
+        if self.gui.map.movement_approve(self.pos, direction):
+            if direction == "up" and self.pos[1] > 0:
+                self.pos[1] -= 15
+                self.update_img(direction)
+                self.update_map(direction)
+            elif direction == "down" and self.pos[1] < self.gui.window_height-30:
+                self.pos[1] += 15
+                self.update_img(direction)
+                self.update_map(direction)
+            elif direction == "left" and self.pos[0] > 0:
+                self.pos[0] -= 15
+                self.update_img(direction)
+                self.update_map(direction)
+            elif direction == "right" and self.pos[0] < self.gui.window_width-30:
+                self.pos[0] += 15
+                self.update_img(direction)
+                self.update_map(direction)
