@@ -29,18 +29,30 @@ class GameState:
 
     def if_near_boom(self, player_pos, boom_pos):
         """
-        Check to see if the player is standing
+        Check to see if the player or something is standing
         near the bomb when it explodes
         """
-        if player_pos[0] != boom_pos[0] and player_pos[1] != boom_pos[1]:
-            return False
-        else:
-            if player_pos[0] in range(boom_pos[0]-2*30, boom_pos[0]+2*30, 30):
-                return True
-            elif player_pos[1] in range(boom_pos[1]-2*30, boom_pos[1]+2*30, 30):
+        if player_pos[0] == boom_pos[0]:
+            if player_pos[1] in range(boom_pos[1]-2*30, boom_pos[1]+3*30, 30):
                 return True
             else:
                 return False
+        elif player_pos[1] == boom_pos[1]:
+            if player_pos[0] in range(boom_pos[0]-2*30, boom_pos[0]+3*30, 30):
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def track_treasures(self, boom_pos):
+        """
+        Track the states of treasures in the map
+        """
+        treasures = self.gui.map.get_treasures()
+        for treasure in treasures:
+            if self.if_near_boom(treasure.get_pos(), boom_pos):
+                treasure.switch_img()
 
     def track_players(self, boom_pos):
         """

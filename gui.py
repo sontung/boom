@@ -105,7 +105,6 @@ class GameGUI:
             if self.state.get_players()[0].get_lives() == 3:
                 self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
             elif self.state.get_players()[0].get_lives() >= 0:
-                print self.dummy_var
                 if not self.done_blinking_animation:
                     pygame.time.wait(100)
                     if self.dummy_var % 2 == 0:
@@ -216,6 +215,12 @@ class Map:
         self.sprite_pos = []
         self.background = back_ground_sprite
 
+    def get_treasures(self):
+        """
+        Get the list of treasures in the map
+        """
+        return self.treasures
+
     def draw_background(self):
         size = 30
         for index_x in range(0, self.gui.window_width, size):
@@ -282,9 +287,16 @@ class Wall(Sprite):
 
 
 class Treasure(Sprite):
-    def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (90, 0)}):
+    def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (90, 0), "secondary": (120, 0)}):
         Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 30, 30))
+        self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
 
+    def switch_img(self):
+        """
+        Switch to the secondary img if the treasure is near an explosion.
+        """
+        self.img = self.secondary_img
 
 class Character(Sprite):
     def __init__(self, pos, sheet, loc_in_sheet, _game_gui):

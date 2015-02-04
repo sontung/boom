@@ -1,5 +1,9 @@
 ## Boom
 
+## 4th Feb, 2015
+
+Adding the ability that when a character drop a bomb near a treasure, the bomb will reveal what is inside the treasure.
+
 ## 3rd Feb, 2015
 
 Adding some sprites to the world map and the condition that the character cannot go through these sprites. About technical details, a Map object is created to simplify the code and keep track of every sprite in the world map.

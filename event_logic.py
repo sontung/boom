@@ -31,6 +31,7 @@ class TimeTracking:
         if self.time_up():
             self.boom.explode()
             self.state.track_players(self.boom.get_pos())
+            self.state.track_treasures(self.boom.get_pos())
             return True
         return False
 
