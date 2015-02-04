@@ -11,6 +11,7 @@ class GameGUI:
         self.characters = []
         self.window_width = 900
         self.window_height = 600
+        self.information_bar_height = self.window_height / 4  # the height of the information bar
         self.font_size = 30
         self.x_margin = 78
         self.y_margin = 150
@@ -89,18 +90,19 @@ class GameGUI:
             if not self.map:
                 self.map = Map(self, Sprite(None, self.sprite_sheet, {"down": (30, 0)}, self))
                 for index_x in range(30, self.window_width, self.font_size*5):
-                    for index_y in range(30, self.window_height, self.font_size):
+                    for index_y in range(30, self.window_height-self.information_bar_height, self.font_size):
                         self.map.add_sprites(Wall((index_x, index_y), self.sprite_sheet, self), "wall")
                 for index_x in range(0, self.window_width, self.font_size*9):
-                    for index_y in range(30, self.window_height, self.font_size*10):
+                    for index_y in range(30, self.window_height-self.information_bar_height, self.font_size*10):
                         self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self), "treasure")
             self.characters = [self.main_character]
             self.buttons = []
             self.map.draw_background()
             self.map.draw_sprite()
             self.state.update_players()
-            lives_sur, lives_rect = self.make_text(str(self.state.get_players()[0].get_lives()), self.text_color,
-                                                       self.tile_color, (self.window_width-60, self.window_height-550))
+            lives_sur, lives_rect = self.make_text("Lives: %d" % self.state.get_players()[0].get_lives(),
+                                                   self.text_color ,self.tile_color,
+                                                   (60,self.window_height-self.information_bar_height+30))
             self.display_surface.blit(lives_sur, lives_rect)
             if self.state.get_players()[0].get_lives() == 3:
                 self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
@@ -224,7 +226,7 @@ class Map:
     def draw_background(self):
         size = 30
         for index_x in range(0, self.gui.window_width, size):
-            for index_y in range(0, self.gui.window_height, size):
+            for index_y in range(0, self.gui.window_height-self.gui.information_bar_height, size):
                 self.gui.display_surface.blit(self.background.get_img(), tuple([index_x, index_y]))
 
     def add_sprites(self, sprite, type_of_sprite):
@@ -298,6 +300,7 @@ class Treasure(Sprite):
         """
         self.img = self.secondary_img
 
+
 class Character(Sprite):
     def __init__(self, pos, sheet, loc_in_sheet, _game_gui):
         Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
@@ -335,7 +338,7 @@ class Character(Sprite):
                 self.pos[1] -= 15
                 self.update_img(direction)
                 self.update_map(direction)
-            elif direction == "down" and self.pos[1] < self.gui.window_height-30:
+            elif direction == "down" and self.pos[1] < self.gui.window_height-30-self.gui.information_bar_height:
                 self.pos[1] += 15
                 self.update_img(direction)
                 self.update_map(direction)
