@@ -7,7 +7,8 @@ class GameGUI:
         self.buttons = []  # keeping track of number of buttons according to each scene (state)
         self.state = _game_state
         self.logic = _game_logic
-        self.sprite_sheet = pygame.image.load("assets\images\sprites_2.png")
+        self.sprite_sheet = pygame.image.load("assets\images\sprites_sheet_main.png")
+        self.boom_sheet = pygame.image.load("assets\images\\boom.jpg")
         self.characters = []
         self.window_width = 900
         self.window_height = 600
@@ -50,7 +51,7 @@ class GameGUI:
         return text_surf, text_rect
 
     def create_boom(self, pos):
-        return Boom(pos, self.sprite_sheet, {"boom": (120, 0), "explosion": (0, 0)}, self.display_surface)
+        return Boom(pos, self.sprite_sheet, self.display_surface)
 
     def get_characters(self):
         return self.characters
@@ -173,30 +174,48 @@ class Button:
 
 
 class Boom:
-    def __init__(self, pos, sheet, loc_in_sheet, surface, extra_explode=0):
+    def __init__(self, pos, sheet, surface, extra_explode=0):
         self.pos = pos
         self.sheet = sheet
-        self.loc_in_sheet = loc_in_sheet
+        self.loc_in_sheet = {"boom1": (480, 0), "explosion": (0, 0), "boom2": (510, 0)}
         self.time_counting = 2000  # the time in ms that the bomb will explode after trigger
         self.surface = surface
-        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["boom"][0], self.loc_in_sheet["boom"][1], 30, 30))
-        self.boom_sprite = self.sheet.subsurface(self.sheet.get_clip())
+        # I want some nice animations with the bomb so that's why we have two spites for the bomb here.
+        self.dummy_var = 0  # serves as an indication to which bomb sprite to be drawn.
+        self.prev_dummy_var = 0  # serves as an indication to which bomb sprite to be drawn.
+        self.frames = 3  # how many frame between each switch of each sprite.
+        self.prev_sprite = 2
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["boom1"][0], self.loc_in_sheet["boom1"][1], 30, 30))
+        self.boom_sprite1 = self.sheet.subsurface(self.sheet.get_clip())
+
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["boom2"][0], self.loc_in_sheet["boom2"][1], 30, 30))
+        self.boom_sprite2 = self.sheet.subsurface(self.sheet.get_clip())
+
         self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["explosion"][0], self.loc_in_sheet["explosion"][1], 30, 30))
         self.explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
         self.extra_explode = extra_explode  # by default, a boom will explode to 4 sides with the length of 2 tiles
 
     def get_img(self):
-        return self.boom_sprite
+        self.dummy_var += 1
+        if self.dummy_var - self.prev_dummy_var == self.frames:
+            self.prev_dummy_var = self.dummy_var
+            if self.prev_sprite == 1:
+                self.prev_sprite = 2
+                return self.boom_sprite2
+            elif self.prev_sprite == 2:
+                self.prev_sprite = 1
+                return self.boom_sprite1
+        else:
+            if self.prev_sprite == 1:
+                return self.boom_sprite2
+            elif self.prev_sprite == 2:
+                return self.boom_sprite1
 
     def get_pos(self):
         return self.pos
 
     def update_pos(self, new_pos):
         self.pos = new_pos
-
-    def leave_boom(self):
-        self.surface.blit(self.boom_sprite, self.pos)
-        pygame.display.update()
 
     def explode(self):
         for index in [0, -1, 1, -2, 2]:
@@ -241,9 +260,18 @@ class Map:
         elif type_of_sprite == "treasure":
             self.treasures.append(sprite)
 
+    def remove_sprite(self, sprite):
+        """
+        Remove the specified sprite.
+        :param sprite:
+        :return:
+        """
+        self.sprites.remove(sprite)
+        self.sprite_pos.remove(sprite.get_pos())
+
     def draw_sprite(self):
         """
-        Draw anything in the sprites list
+        Draw anything in the sprites list.
         """
         for sprite in self.sprites:
             self.gui.display_surface.blit(sprite.get_img(), sprite.get_pos())

@@ -15,7 +15,7 @@ class TimeTracking:
         """
         Check to see if the amount of self.time seconds has passed
         """
-        self.boom.leave_boom()
+        #self.boom.leave_boom()
         if time.time() - self.time_at_the_moment >= self.number_of_seconds:
             return True
         else:
@@ -59,8 +59,8 @@ class EventLogic:
         for time_tracker in self.time_trackers:
             if time_tracker.trigger():
                 self.time_trackers.remove(time_tracker)
-            else:
-                time_tracker.get_boom().leave_boom()
+                self._game_gui.map.remove_sprite(time_tracker.get_boom())
+
 
         event = pygame.event.poll()
         if event.type == MOUSEBUTTONUP:
@@ -100,6 +100,7 @@ class EventLogic:
 
             elif event.key == K_SPACE:
                 boom = self._game_gui.create_boom(self._game_gui.characters[0].get_pos())
+                self._game_gui.map.add_sprites(boom, "bomb")
                 boom_trigger = TimeTracking(2, boom, self._game_state)
                 self.time_trackers.append(boom_trigger)
                 pygame.display.update()
