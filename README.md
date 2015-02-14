@@ -7,8 +7,8 @@ extra explode (which makes the bomb now explodes broader).
 
 ## 8th Feb, 2015
 
-Adding stunning bomb sprite and some nice animations indicating that the bomb is timing (choose wisely where to
-stand :P)
+Adding stunning bomb sprite and some nice animations indicating that the bomb is timing and choose wisely where to
+stand :P Big improvement, thanks to Tran Duy Hung.
 
 ## 4th Feb, 2015
 
