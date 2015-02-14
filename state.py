@@ -54,9 +54,21 @@ class GameState:
             if self.if_near_boom(treasure.get_pos(), boom_pos):
                 treasure.switch_img()
 
-    def track_players(self, boom_pos):
+    def track_players_treasures(self):
         """
-        Track the play of players
+        Track the play of players when they eat treasures
+        """
+        treasures = self.gui.map.get_treasures()
+        for player in self.players:
+            for treasure in treasures:
+                if treasure.ready_to_eat():
+                    if player.get_char().get_pos() == treasure.get_pos():
+                        treasure.buff(player)
+                        self.gui.map.remove_sprite(treasure, "treasure")
+
+    def track_players_bombs(self, boom_pos):
+        """
+        Track the play of players when they're near bombs
         """
         self.update_players()
         for player in self.players:
@@ -74,6 +86,7 @@ class PlayerState:
         self.character = character
         self.lives = 3
         self.score = 0
+        self.extra_explode = 0
 
     def get_char(self):
         return self.character
@@ -81,10 +94,20 @@ class PlayerState:
     def get_lives(self):
         return self.lives
 
+    def get_extra_explode(self):
+        return self.extra_explode
+
+    def update_extra_explode(self, amount):
+        """
+        Increment the player's extra bomb by an amount, his/her bomb
+        now explodes broader.
+        """
+        self.extra_explode += amount
+
     def update_lives(self, amount):
         """
         Increment the player's lives by an amount, amount can
-        be negative
+        be negative.
         """
         self.lives += amount
 

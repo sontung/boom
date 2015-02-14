@@ -30,7 +30,7 @@ class TimeTracking:
         """
         if self.time_up():
             self.boom.explode()
-            self.state.track_players(self.boom.get_pos())
+            self.state.track_players_bombs(self.boom.get_pos())
             self.state.track_treasures(self.boom.get_pos())
             return True
         return False
@@ -60,7 +60,6 @@ class EventLogic:
             if time_tracker.trigger():
                 self.time_trackers.remove(time_tracker)
                 self._game_gui.map.remove_sprite(time_tracker.get_boom())
-
 
         event = pygame.event.poll()
         if event.type == MOUSEBUTTONUP:

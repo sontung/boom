@@ -1,5 +1,10 @@
 ## Boom
 
+## 14th Feb, 2015
+
+Adding the ability to get the buff by blow up the treasure and then eat them. The buffs include extra lives and 
+extra explode (which makes the bomb now explodes broader).
+
 ## 8th Feb, 2015
 
 Adding stunning bomb sprite and some nice animations indicating that the bomb is timing (choose wisely where to

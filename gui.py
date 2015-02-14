@@ -51,7 +51,7 @@ class GameGUI:
         return text_surf, text_rect
 
     def create_boom(self, pos):
-        return Boom(pos, self.sprite_sheet, self.display_surface)
+        return Boom(pos, self.sprite_sheet, self.display_surface, self.state.get_players()[0].get_extra_explode())
 
     def get_characters(self):
         return self.characters
@@ -84,10 +84,9 @@ class GameGUI:
 
         elif state == "new game":
             if not self.characters:
-                self.main_character = Character([self.window_width/2, self.window_height/2], self.sprite_sheet, {"up": (240, 0),
-                                                                                                              "down": (180, 0),
-                                                                                                              "left": (360, 0),
-                                                                                                              "right": (300, 0)}, self)
+                self.main_character = Character([self.window_width/2, self.window_height/2], self.sprite_sheet,
+                                                {"up": (240, 0), "down": (180, 0), "left": (360, 0), "right": (300, 0)},
+                                                self)
             if not self.map:
                 self.map = Map(self, Sprite(None, self.sprite_sheet, {"down": (30, 0)}, self))
                 for index_x in range(30, self.window_width, self.font_size*5):
@@ -95,12 +94,15 @@ class GameGUI:
                         self.map.add_sprites(Wall((index_x, index_y), self.sprite_sheet, self), "wall")
                 for index_x in range(0, self.window_width, self.font_size*9):
                     for index_y in range(30, self.window_height-self.information_bar_height, self.font_size*10):
-                        self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self), "treasure")
+                        self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self, "extra explode"), "treasure")
+
             self.characters = [self.main_character]
             self.buttons = []
             self.map.draw_background()
             self.map.draw_sprite()
             self.state.update_players()
+            self.state.track_players_treasures()
+            print self.state.get_players()[0].get_extra_explode()
             lives_sur, lives_rect = self.make_text("Lives: %d" % self.state.get_players()[0].get_lives(),
                                                    self.text_color ,self.tile_color,
                                                    (60,self.window_height-self.information_bar_height+30))
@@ -218,7 +220,9 @@ class Boom:
         self.pos = new_pos
 
     def explode(self):
-        for index in [0, -1, 1, -2, 2]:
+        right = 3 + self.extra_explode
+        left = -2 - self.extra_explode
+        for index in range(left, right):
             self.surface.blit(self.explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
             self.surface.blit(self.explode_sprite, tuple([self.pos[0]+30*index, self.pos[1]]))
         pygame.display.update()
@@ -260,14 +264,26 @@ class Map:
         elif type_of_sprite == "treasure":
             self.treasures.append(sprite)
 
-    def remove_sprite(self, sprite):
+    def remove_sprite_pos(self, sprite_pos):
+        """
+        Remove the sprite_pos so movement through this sprite
+        is possible.
+        """
+        self.sprite_pos.remove(sprite_pos)
+
+    def remove_sprite(self, sprite, type_of_sprite=None):
         """
         Remove the specified sprite.
-        :param sprite:
-        :return:
         """
         self.sprites.remove(sprite)
-        self.sprite_pos.remove(sprite.get_pos())
+        try:
+            self.sprite_pos.remove(sprite.get_pos())
+        except ValueError:
+            pass
+        if type_of_sprite == "wall":
+            self.walls.remove(sprite)
+        elif type_of_sprite == "treasure":
+            self.treasures.remove(sprite)
 
     def draw_sprite(self):
         """
@@ -317,16 +333,33 @@ class Wall(Sprite):
 
 
 class Treasure(Sprite):
-    def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (90, 0), "secondary": (120, 0)}):
+    def __init__(self, pos, sheet, _game_gui, buff, loc_in_sheet={"down": (90, 0), "secondary": (120, 0)}):
         Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
         self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 30, 30))
         self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
+        self.var_buff = buff
+        self.var_ready_to_eat = False
+        self._game_gui = _game_gui
 
     def switch_img(self):
         """
         Switch to the secondary img if the treasure is near an explosion.
         """
         self.img = self.secondary_img
+        self.var_ready_to_eat = True
+        self._game_gui.map.remove_sprite_pos(self.get_pos())
+
+    def ready_to_eat(self):
+        return self.var_ready_to_eat
+
+    def buff(self, player):
+        """
+        Make a buff to player.
+        """
+        if self.var_buff == "extra live":
+            player.update_lives(1)
+        elif self.var_buff == "extra explode":
+            player.update_extra_explode(1)
 
 
 class Character(Sprite):
