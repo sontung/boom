@@ -2,7 +2,11 @@
 
 ## 18th Feb, 2015
 
-Updating character sprites and the heart sprite for denoting an extra live buff. Now the game has 2
+Updating wall sprite and the stone sprite denoting an extra explode buff.
+
+## 17th Feb, 2015
+
+Updating character sprites and the heart sprite denoting an extra live buff. Now the game has 2
 characters for players to choose, male character and female character.
 
 ## 14th Feb, 2015

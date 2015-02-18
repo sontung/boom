@@ -95,7 +95,7 @@ class GameGUI:
                         self.map.add_sprites(Wall((index_x, index_y), self.sprite_sheet, self), "wall")
                 for index_x in range(0, self.window_width, self.font_size*9):
                     for index_y in range(30, self.window_height-self.information_bar_height, self.font_size*10):
-                        self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self, "extra live"), "treasure")
+                        self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self, "extra explode"), "treasure")
 
             self.characters = [self.main_character]
             self.buttons = []
@@ -332,15 +332,21 @@ class Sprite:
 
 
 class Wall(Sprite):
-    def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (0, 0)}):
+    def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (560, 0)}):
         Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
 
 
 class Treasure(Sprite):
-    def __init__(self, pos, sheet, _game_gui, buff, loc_in_sheet={"down": (90, 0), "secondary": (540, 0)}):
+    def __init__(self, pos, sheet, _game_gui, buff, loc_in_sheet={"down": (90, 0)}):
         Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
-        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 20, 19))
-        self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
+        if buff == "extra live":
+            self.loc_in_sheet["secondary"] = (540, 0)
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 20, 19))
+            self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
+        elif buff == "extra explode":
+            self.loc_in_sheet["secondary"] = (37, 30)
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 20, 20))
+            self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
         self.var_buff = buff
         self.var_ready_to_eat = False
         self._game_gui = _game_gui
