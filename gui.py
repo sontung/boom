@@ -8,7 +8,8 @@ class GameGUI:
         self.state = _game_state
         self.logic = _game_logic
         self.sprite_sheet = pygame.image.load("assets\images\sprites_sheet_main.png")
-        self.boom_sheet = pygame.image.load("assets\images\\boom.jpg")
+        self.male_char_sprite_sheet = pygame.image.load("assets\images\\male.png")
+        self.female_char_sprite_sheet = pygame.image.load("assets\images\\female.png")
         self.characters = []
         self.window_width = 900
         self.window_height = 600
@@ -84,8 +85,8 @@ class GameGUI:
 
         elif state == "new game":
             if not self.characters:
-                self.main_character = Character([self.window_width/2, self.window_height/2], self.sprite_sheet,
-                                                {"up": (240, 0), "down": (180, 0), "left": (360, 0), "right": (300, 0)},
+                self.main_character = Character([self.window_width/2, self.window_height/2], self.male_char_sprite_sheet,
+                                                {"up": (66, 0), "down": (0, 0), "right": (132, 0), "left": (132, 0)},
                                                 self)
             if not self.map:
                 self.map = Map(self, Sprite(None, self.sprite_sheet, {"down": (30, 0)}, self))
@@ -94,7 +95,7 @@ class GameGUI:
                         self.map.add_sprites(Wall((index_x, index_y), self.sprite_sheet, self), "wall")
                 for index_x in range(0, self.window_width, self.font_size*9):
                     for index_y in range(30, self.window_height-self.information_bar_height, self.font_size*10):
-                        self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self, "extra explode"), "treasure")
+                        self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self, "extra live"), "treasure")
 
             self.characters = [self.main_character]
             self.buttons = []
@@ -102,9 +103,8 @@ class GameGUI:
             self.map.draw_sprite()
             self.state.update_players()
             self.state.track_players_treasures()
-            print self.state.get_players()[0].get_extra_explode()
             lives_sur, lives_rect = self.make_text("Lives: %d" % self.state.get_players()[0].get_lives(),
-                                                   self.text_color ,self.tile_color,
+                                                   self.text_color, self.tile_color,
                                                    (60,self.window_height-self.information_bar_height+30))
             self.display_surface.blit(lives_sur, lives_rect)
             if self.state.get_players()[0].get_lives() == 3:
@@ -312,10 +312,14 @@ class Map:
 
 
 class Sprite:
-    def __init__(self, pos, sheet, loc_in_sheet, _game_gui):
+    def __init__(self, pos, sheet, loc_in_sheet, _game_gui, specific_dim=None):
         self.sheet = sheet
         self.loc_in_sheet = loc_in_sheet  # a dictionary keeping track of each movement and their sprites
-        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["down"][0], self.loc_in_sheet["down"][1], 30, 30))
+        if specific_dim:
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["down"][0], self.loc_in_sheet["down"][1],
+                                            specific_dim[0], specific_dim[1]))
+        else:
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["down"][0], self.loc_in_sheet["down"][1], 30, 30))
         self.img = self.sheet.subsurface(self.sheet.get_clip())
         self.pos = pos
         self.gui = _game_gui
@@ -333,9 +337,9 @@ class Wall(Sprite):
 
 
 class Treasure(Sprite):
-    def __init__(self, pos, sheet, _game_gui, buff, loc_in_sheet={"down": (90, 0), "secondary": (120, 0)}):
+    def __init__(self, pos, sheet, _game_gui, buff, loc_in_sheet={"down": (90, 0), "secondary": (540, 0)}):
         Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
-        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 30, 30))
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 20, 19))
         self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
         self.var_buff = buff
         self.var_ready_to_eat = False
@@ -364,31 +368,37 @@ class Treasure(Sprite):
 
 class Character(Sprite):
     def __init__(self, pos, sheet, loc_in_sheet, _game_gui):
-        Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
+        Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui, (22, 30))
         self.map = {                      # a dictionary helping choose which img to display according to the movement
-            "up":    [[-1], [0]],
-            "down":  [[-1], [0]],
-            "left":  [[-1], [0]],
-            "right": [[-1], [0]]
+            "up":    [[1], [2]],
+            "down":  [[1], [2]],
+            "left":  [[1], [2]],
+            "right": [[1], [2]]
         }
 
     def update_img(self, direction):
-        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[direction][0]+30*self.map[direction][0].pop(),
-                                        self.loc_in_sheet[direction][1], 30, 30))
-        self.img = self.sheet.subsurface(self.sheet.get_clip())
+        if direction == "left":
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[direction][0]+22*self.map[direction][0].pop(),
+                                            self.loc_in_sheet[direction][1], 22, 30))
+            self.img = pygame.transform.flip(self.sheet.subsurface(self.sheet.get_clip()), 1, 0)
+        else:
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[direction][0]+22*self.map[direction][0].pop(),
+                                            self.loc_in_sheet[direction][1], 22, 30))
+            self.img = self.sheet.subsurface(self.sheet.get_clip())
 
     def update_map(self, direction):
         """
         Helper func to decide which number to add
         then help locating the sprite in the sheet.
-        :return:
         """
         number_to_add = self.map[direction][1].pop()
         self.map[direction][0].append(number_to_add)
-        if number_to_add == -1:
+        if number_to_add == 1:
+            self.map[direction][1].append(2)
+        elif number_to_add == 2:
             self.map[direction][1].append(0)
-        else:
-            self.map[direction][1].append(-1)
+        elif number_to_add == 0:
+            self.map[direction][1].append(1)
 
     def get_pos(self):
         return tuple(self.pos)
@@ -396,18 +406,18 @@ class Character(Sprite):
     def increment_pos(self, direction):
         if self.gui.map.movement_approve(self.pos, direction):
             if direction == "up" and self.pos[1] > 0:
-                self.pos[1] -= 15
+                self.pos[1] -= 10
                 self.update_img(direction)
                 self.update_map(direction)
             elif direction == "down" and self.pos[1] < self.gui.window_height-30-self.gui.information_bar_height:
-                self.pos[1] += 15
+                self.pos[1] += 10
                 self.update_img(direction)
                 self.update_map(direction)
             elif direction == "left" and self.pos[0] > 0:
-                self.pos[0] -= 15
+                self.pos[0] -= 10
                 self.update_img(direction)
                 self.update_map(direction)
             elif direction == "right" and self.pos[0] < self.gui.window_width-30:
-                self.pos[0] += 15
+                self.pos[0] += 10
                 self.update_img(direction)
                 self.update_map(direction)

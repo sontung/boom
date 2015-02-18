@@ -1,5 +1,10 @@
 ## Boom
 
+## 18th Feb, 2015
+
+Updating character sprites and the heart sprite for denoting an extra live buff. Now the game has 2
+characters for players to choose, male character and female character.
+
 ## 14th Feb, 2015
 
 Adding the ability to get the buff by blow up the treasure and then eat them. The buffs include extra lives and 
