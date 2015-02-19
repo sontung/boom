@@ -179,7 +179,15 @@ class Boom:
     def __init__(self, pos, sheet, surface, extra_explode=0):
         self.pos = pos
         self.sheet = sheet
-        self.loc_in_sheet = {"boom1": (480, 0), "explosion": (0, 0), "boom2": (510, 0)}
+        self.loc_in_sheet = {"boom1": (480, 0),
+                             "boom2": (510, 0),
+                             "center": (0, 50),
+                             "up": (30, 50),
+                             "down": (90, 50),
+                             "right": (150, 50),
+                             "left": (60, 50),
+                             "row": (120, 50),
+                             "col": (180, 50)}
         self.time_counting = 2000  # the time in ms that the bomb will explode after trigger
         self.surface = surface
         # I want some nice animations with the bomb so that's why we have two spites for the bomb here.
@@ -193,8 +201,27 @@ class Boom:
         self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["boom2"][0], self.loc_in_sheet["boom2"][1], 30, 30))
         self.boom_sprite2 = self.sheet.subsurface(self.sheet.get_clip())
 
-        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["explosion"][0], self.loc_in_sheet["explosion"][1], 30, 30))
-        self.explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["center"][0], self.loc_in_sheet["center"][1], 30, 30))
+        self.center_explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
+
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["up"][0], self.loc_in_sheet["up"][1], 30, 30))
+        self.up_explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
+
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["down"][0], self.loc_in_sheet["down"][1], 30, 30))
+        self.down_explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
+
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["right"][0], self.loc_in_sheet["right"][1], 30, 30))
+        self.right_explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
+
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["left"][0], self.loc_in_sheet["left"][1], 30, 30))
+        self.left_explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
+
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["row"][0], self.loc_in_sheet["row"][1], 30, 30))
+        self.row_explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
+
+        self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["col"][0], self.loc_in_sheet["col"][1], 30, 30))
+        self.col_explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
+
         self.extra_explode = extra_explode  # by default, a boom will explode to 4 sides with the length of 2 tiles
 
     def get_img(self):
@@ -222,9 +249,20 @@ class Boom:
     def explode(self):
         right = 3 + self.extra_explode
         left = -2 - self.extra_explode
+        self.sheet.set_clip(pygame.Rect(0, 50, 30, 30))
+        self.center_explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
         for index in range(left, right):
-            self.surface.blit(self.explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
-            self.surface.blit(self.explode_sprite, tuple([self.pos[0]+30*index, self.pos[1]]))
+            if index == left:
+                self.surface.blit(self.up_explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
+                self.surface.blit(self.left_explode_sprite, tuple([self.pos[0]+30*index, self.pos[1]]))
+            elif index == 0:
+                self.surface.blit(self.center_explode_sprite, tuple([self.pos[0], self.pos[1]]))
+            elif index == right-1:
+                self.surface.blit(self.down_explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
+                self.surface.blit(self.right_explode_sprite, tuple([self.pos[0]+30*index, self.pos[1]]))
+            else:
+                self.surface.blit(self.col_explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
+                self.surface.blit(self.row_explode_sprite, tuple([self.pos[0]+30*index, self.pos[1]]))
         pygame.display.update()
 
 

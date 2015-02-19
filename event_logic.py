@@ -13,9 +13,8 @@ class TimeTracking:
 
     def time_up(self):
         """
-        Check to see if the amount of self.time seconds has passed
+        Check to see if the amount of self.number_of_seconds seconds has passed
         """
-        #self.boom.leave_boom()
         if time.time() - self.time_at_the_moment >= self.number_of_seconds:
             return True
         else:
