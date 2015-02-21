@@ -57,6 +57,7 @@ class EventLogic:
     def event_handler(self):
         for time_tracker in self.time_trackers:
             if time_tracker.trigger():
+                self._game_gui.add_time_tracker(time_tracker)
                 self.time_trackers.remove(time_tracker)
                 self._game_gui.map.remove_sprite(time_tracker.get_boom())
 

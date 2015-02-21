@@ -1,5 +1,10 @@
 ## Boom
 
+## 21st Feb, 2015
+
+Add some stunning monster sprites running around the map, and when the player jump in one of
+those monsters, a live is deducted. 
+
 ## 19th Feb, 2015
 
 Update explosion sprite.

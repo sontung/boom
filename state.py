@@ -1,3 +1,5 @@
+
+
 class GameState:
     """
     The game state
@@ -30,7 +32,7 @@ class GameState:
     def if_near_boom(self, player_pos, boom_pos):
         """
         Check to see if the player or something is standing
-        near the bomb when it explodes
+        near the bomb when it explodes.
         """
         if player_pos[0] == boom_pos[0]:
             if player_pos[1] in range(boom_pos[1]-2*30, boom_pos[1]+3*30, 30):
@@ -45,9 +47,18 @@ class GameState:
         else:
             return False
 
+    def if_near_monster(self, player_pos):
+        """
+        Check to see if the player jump in a monster.
+        """
+        for monster in self.gui.monsters:
+            if player_pos == tuple(monster.get_pos()):
+                return True
+        return False
+
     def track_treasures(self, boom_pos):
         """
-        Track the states of treasures in the map
+        Track the states of treasures in the map.
         """
         treasures = self.gui.map.get_treasures()
         for treasure in treasures:
@@ -56,7 +67,7 @@ class GameState:
 
     def track_players_treasures(self):
         """
-        Track the play of players when they eat treasures
+        Track the play of players when they eat treasures.
         """
         treasures = self.gui.map.get_treasures()
         for player in self.players:
@@ -66,11 +77,19 @@ class GameState:
                         treasure.buff(player)
                         self.gui.map.remove_sprite(treasure, "treasure")
 
+    def track_players_monsters(self):
+        """
+        Track the play of players when they're near monsters.
+        """
+        for player in self.players:
+            if self.if_near_monster(player.get_char().get_pos()):
+                player.update_lives(-1)
+                self.gui.set_doneBlinkingAnimation(False)
+
     def track_players_bombs(self, boom_pos):
         """
-        Track the play of players when they're near bombs
+        Track the play of players when they're near bombs.
         """
-        self.update_players()
         for player in self.players:
             if self.if_near_boom(player.get_char().get_pos(), boom_pos):
                 player.update_lives(-1)

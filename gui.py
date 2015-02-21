@@ -1,4 +1,5 @@
 import pygame
+import random
 
 
 class GameGUI:
@@ -8,16 +9,21 @@ class GameGUI:
         self.state = _game_state
         self.logic = _game_logic
         self.sprite_sheet = pygame.image.load("assets\images\sprites_sheet_main.png")
+        self.monster_sprite = pygame.image.load("assets\images\monster.png")
         self.male_char_sprite_sheet = pygame.image.load("assets\images\\male.png")
         self.female_char_sprite_sheet = pygame.image.load("assets\images\\female.png")
         self.characters = []
-        self.window_width = 900
+        self.monsters = []
+        self.window_width = 870
         self.window_height = 600
         self.information_bar_height = self.window_height / 4  # the height of the information bar
         self.font_size = 30
         self.x_margin = 78
         self.y_margin = 150
         self.map = None
+        # this list below keeping track of the bombs these are exploding, so their
+        # explosion sprites stay for 7 frames.
+        self.redundant_time_trackers = []
         self.colors = {"white": (255, 255, 255),
                        "black": (41, 36, 33),
                        "navy": (0, 0, 128),
@@ -60,9 +66,15 @@ class GameGUI:
     def set_doneBlinkingAnimation(self, val):
         self.done_blinking_animation = val
 
+    def add_time_tracker(self, time_tracker):
+        """
+        Add redundant time tracker.
+        """
+        self.redundant_time_trackers.append(time_tracker)
+
     def draw(self, state):
         """
-        Draw the scene
+        Draw the scene.
         """
         self.display_surface.fill(self.bg_color)
         if state == "welcome":
@@ -85,24 +97,44 @@ class GameGUI:
 
         elif state == "new game":
             if not self.characters:
-                self.main_character = Character([self.window_width/2, self.window_height/2], self.male_char_sprite_sheet,
+                self.main_character = Character([424, self.window_height/2], self.male_char_sprite_sheet,
                                                 {"up": (66, 0), "down": (0, 0), "right": (132, 0), "left": (132, 0)},
                                                 self)
             if not self.map:
                 self.map = Map(self, Sprite(None, self.sprite_sheet, {"down": (30, 0)}, self))
-                for index_x in range(30, self.window_width, self.font_size*5):
-                    for index_y in range(30, self.window_height-self.information_bar_height, self.font_size):
+                for index_x in range(30, self.window_width, self.font_size*2):
+                    for index_y in range(30, self.window_height-self.information_bar_height, self.font_size*2):
                         self.map.add_sprites(Wall((index_x, index_y), self.sprite_sheet, self), "wall")
                 for index_x in range(0, self.window_width, self.font_size*9):
                     for index_y in range(30, self.window_height-self.information_bar_height, self.font_size*10):
                         self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self, "extra explode"), "treasure")
 
+            if not self.monsters:
+                self.monster = Monster([120, 30], self.monster_sprite, self, {"down": (0, 0),
+                                                                             "up": (120, 0),
+                                                                             "right": (60, 0),
+                                                                             "left": (60, 0)})
+
             self.characters = [self.main_character]
+            self.monsters = [self.monster]
             self.buttons = []
             self.map.draw_background()
             self.map.draw_sprite()
             self.state.update_players()
             self.state.track_players_treasures()
+            self.monster.move()
+            self.state.track_players_monsters()
+            print self.monster.get_pos(), self.main_character.get_pos()
+            self.display_surface.blit(self.monster.get_img(), self.monster.get_pos())
+
+            # I want the bomb sprites stay longer than 1 frame (actually 7 frames) so I add this for loop here
+            for time_tracker in self.redundant_time_trackers:
+                if time_tracker.get_boom().get_count() >= 7:
+                    self.redundant_time_trackers.remove(time_tracker)
+                else:
+                    time_tracker.get_boom().explode()
+                    time_tracker.get_boom().increment_count()
+
             lives_sur, lives_rect = self.make_text("Lives: %d" % self.state.get_players()[0].get_lives(),
                                                    self.text_color, self.tile_color,
                                                    (60,self.window_height-self.information_bar_height+30))
@@ -190,6 +222,7 @@ class Boom:
                              "col": (180, 50)}
         self.time_counting = 2000  # the time in ms that the bomb will explode after trigger
         self.surface = surface
+        self.count = 0  # track of how many frames the explosion sprites have remained
         # I want some nice animations with the bomb so that's why we have two spites for the bomb here.
         self.dummy_var = 0  # serves as an indication to which bomb sprite to be drawn.
         self.prev_dummy_var = 0  # serves as an indication to which bomb sprite to be drawn.
@@ -240,6 +273,12 @@ class Boom:
             elif self.prev_sprite == 2:
                 return self.boom_sprite1
 
+    def increment_count(self):
+        self.count += 1
+
+    def get_count(self):
+        return self.count
+
     def get_pos(self):
         return self.pos
 
@@ -249,8 +288,6 @@ class Boom:
     def explode(self):
         right = 3 + self.extra_explode
         left = -2 - self.extra_explode
-        self.sheet.set_clip(pygame.Rect(0, 50, 30, 30))
-        self.center_explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
         for index in range(left, right):
             if index == left:
                 self.surface.blit(self.up_explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
@@ -330,11 +367,20 @@ class Map:
         for sprite in self.sprites:
             self.gui.display_surface.blit(sprite.get_img(), sprite.get_pos())
 
-    def movement_approve(self, char_pos, direction):
+    def map_pos(self, char_pos):
         """
-        Approve the movement of the character along that direction
+        Map the position of the character to the new position (a new one is a
+        multiplication of 30) in the map, then help deciding movement approvement.
+        """
+        return char_pos[0]-4, char_pos[1]
+
+    def movement_approve(self, char_pos, direction, var_type="character"):
+        """
+        Approve the movement of the character or monster along that direction
         if it won't pass through any sprites.
         """
+        if var_type == "character":
+            char_pos = self.map_pos(char_pos)
         if direction == "up":
             char_pos_after_move = char_pos[0], char_pos[1]-30
         elif direction == "down":
@@ -372,6 +418,109 @@ class Sprite:
 class Wall(Sprite):
     def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (560, 0)}):
         Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
+
+
+class Monster(Sprite):
+    def __init__(self, pos, sheet, _game_gui, loc_in_sheet):
+        Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
+        self.count = 0  # serves as a var to keep track of how many frames passed
+        self.current_direction = "down"  # only change this direction if not able to move further
+        self.map = {                     # a dictionary helping choose which img to display according to the movement
+            "up":    [[0], [1]],
+            "down":  [[0], [1]],
+            "left":  [[0], [1]],
+            "right": [[0], [1]]
+        }
+
+    def update_img(self, direction):
+        if direction == "right":
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[direction][0]+30*self.map[direction][0].pop(),
+                                            self.loc_in_sheet[direction][1], 30, 30))
+            self.img = pygame.transform.flip(self.sheet.subsurface(self.sheet.get_clip()), 1, 0)
+        else:
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[direction][0]+30*self.map[direction][0].pop(),
+                                            self.loc_in_sheet[direction][1], 30, 30))
+            self.img = self.sheet.subsurface(self.sheet.get_clip())
+
+    def update_map(self, direction):
+        """
+        Helper func to decide which number to add
+        then help locating the sprite in the sheet.
+        """
+        number_to_add = self.map[direction][1].pop()
+        self.map[direction][0].append(number_to_add)
+        if number_to_add == 1:
+            self.map[direction][1].append(0)
+        elif number_to_add == 0:
+            self.map[direction][1].append(1)
+
+    def decide_move(self):
+        """
+        Decide which direction for the monster.
+        """
+        if self.gui.map.movement_approve(self.pos, self.current_direction, "monster") and not self.if_reach_edges():
+            return self.current_direction
+        else:
+            possible_moves = []
+            for possible_move in ["up", "left", "down", "right"]:
+                if self.gui.map.movement_approve(self.pos, possible_move, "monster"):
+                    possible_moves.append(possible_move)
+            self.set_current_direction(random.choice(possible_moves))
+            return self.current_direction
+
+    def set_current_direction(self, direction):
+        self.current_direction = direction
+
+    def track(self):
+        """
+        Decide if it's time to move, I don't want the monster
+        move too fast.
+        """
+        self.count += 1
+        if self.count == 7:
+            self.count = 0
+            return True
+        else:
+            return False
+
+    def if_reach_edges(self):
+        """
+        Find out if the monster has reached the 4 edges of the window
+        indicating a sign that current direction need to be changed.
+        """
+        if self.current_direction == "up" and self.pos[1] == 0:
+            return True
+        elif self.current_direction == "down" and self.pos[1] == self.gui.window_height-30-self.gui.information_bar_height:
+            return True
+        elif self.current_direction == "left" and self.pos[0] == 0:
+            return True
+        elif self.current_direction == "right" and self.pos[0] == self.gui.window_width-30:
+            return True
+        else:
+            return False
+
+    def move(self):
+        """
+        Move the monster.
+        """
+        if self.track():
+            direction = self.decide_move()
+            if direction == "up" and self.pos[1] > 0:
+                self.pos[1] -= 15
+                self.update_img(direction)
+                self.update_map(direction)
+            elif direction == "down" and self.pos[1] < self.gui.window_height-30-self.gui.information_bar_height:
+                self.pos[1] += 15
+                self.update_img(direction)
+                self.update_map(direction)
+            elif direction == "left" and self.pos[0] > 0:
+                self.pos[0] -= 15
+                self.update_img(direction)
+                self.update_map(direction)
+            elif direction == "right" and self.pos[0] < self.gui.window_width-30:
+                self.pos[0] += 15
+                self.update_img(direction)
+                self.update_map(direction)
 
 
 class Treasure(Sprite):
@@ -444,8 +593,15 @@ class Character(Sprite):
         elif number_to_add == 0:
             self.map[direction][1].append(1)
 
+    def map_pos(self, char_pos):
+        """
+        Map the position of the character to the new position (a new one is a
+        multiplication of 30) in the map, then help deciding movement approvement.
+        """
+        return char_pos[0]-4, char_pos[1]
+
     def get_pos(self):
-        return tuple(self.pos)
+        return self.map_pos(self.pos)
 
     def increment_pos(self, direction):
         if self.gui.map.movement_approve(self.pos, direction):
