@@ -1,5 +1,9 @@
 ## Boom
 
+## 22nd Feb, 2015
+
+Give the player some immortal time after the dead (by monsters or bombs)
+
 ## 21st Feb, 2015
 
 Add some stunning monster sprites running around the map, and when the player jump in one of

@@ -124,7 +124,7 @@ class GameGUI:
             self.state.track_players_treasures()
             self.monster.move()
             self.state.track_players_monsters()
-            print self.monster.get_pos(), self.main_character.get_pos()
+            #print self.monster.if_change_pos(), self.monster.pos, self.monster.previous_pos
             self.display_surface.blit(self.monster.get_img(), self.monster.get_pos())
 
             # I want the bomb sprites stay longer than 1 frame (actually 7 frames) so I add this for loop here
@@ -505,6 +505,8 @@ class Monster(Sprite):
         """
         if self.track():
             direction = self.decide_move()
+            # copy.copy prevents the change  in self.pos below
+            # also leads to the change in self.previous_pos
             if direction == "up" and self.pos[1] > 0:
                 self.pos[1] -= 15
                 self.update_img(direction)
@@ -601,7 +603,7 @@ class Character(Sprite):
         return char_pos[0]-4, char_pos[1]
 
     def get_pos(self):
-        return self.map_pos(self.pos)
+        return self.pos
 
     def increment_pos(self, direction):
         if self.gui.map.movement_approve(self.pos, direction):

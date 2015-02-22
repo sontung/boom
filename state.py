@@ -1,3 +1,4 @@
+import time
 
 
 class GameState:
@@ -51,6 +52,7 @@ class GameState:
         """
         Check to see if the player jump in a monster.
         """
+        player_pos = player_pos[0]-4, player_pos[1]
         for monster in self.gui.monsters:
             if player_pos == tuple(monster.get_pos()):
                 return True
@@ -82,8 +84,9 @@ class GameState:
         Track the play of players when they're near monsters.
         """
         for player in self.players:
-            if self.if_near_monster(player.get_char().get_pos()):
+            if self.if_near_monster(player.get_char().get_pos()) and not player.if_immortal():
                 player.update_lives(-1)
+                player.set_time_dead()
                 self.gui.set_doneBlinkingAnimation(False)
 
     def track_players_bombs(self, boom_pos):
@@ -91,21 +94,45 @@ class GameState:
         Track the play of players when they're near bombs.
         """
         for player in self.players:
-            if self.if_near_boom(player.get_char().get_pos(), boom_pos):
+            if self.if_near_boom(player.get_char().get_pos(), boom_pos) and not player.if_immortal():
                 player.update_lives(-1)
+                player.set_time_dead()
                 self.gui.set_doneBlinkingAnimation(False)
 
 
 class PlayerState:
     """
     The player game state keeping track of all the
-    information involved the player
+    information involved the player.
     """
     def __init__(self, character):
         self.character = character
         self.lives = 3
         self.score = 0
         self.extra_explode = 0
+        self.immortal_time = 2  # during this duration, the player is immortal.
+        self.time_at_the_moment = 0  # time at the moment the player dies.
+
+    def time_up(self):
+        if time.time() - self.time_at_the_moment >= self.immortal_time:
+            return True
+        else:
+            return False
+
+    def set_time_dead(self):
+        """
+        Record the time when the player dies.
+        """
+        self.time_at_the_moment = time.time()
+
+    def if_immortal(self):
+        """
+        Return True if the player is still immortal.
+        """
+        if self.time_up():
+            return False
+        else:
+            return True
 
     def get_char(self):
         return self.character
