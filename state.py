@@ -98,6 +98,10 @@ class GameState:
                 player.update_lives(-1)
                 player.set_time_dead()
                 self.gui.set_doneBlinkingAnimation(False)
+            for monster in self.gui.monsters:
+                print self.if_near_boom(monster.get_pos(), boom_pos)
+                if self.if_near_boom(monster.get_pos(), boom_pos):
+                    self.gui.map.remove_sprite(monster)
 
 
 class PlayerState:

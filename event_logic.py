@@ -102,7 +102,8 @@ class EventLogic:
                     self.event_handler()
 
             elif event.key == K_SPACE:
-                boom = self._game_gui.create_boom(self._game_gui.characters[0].get_pos())
+                char_pos = self._game_gui.characters[0].get_pos()[0]-4, self._game_gui.characters[0].get_pos()[1]
+                boom = self._game_gui.create_boom(char_pos)
                 self._game_gui.map.add_sprites(boom, "bomb")
                 boom_trigger = TimeTracking(2, boom, self._game_state)
                 self.time_trackers.append(boom_trigger)

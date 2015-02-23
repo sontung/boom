@@ -1,8 +1,13 @@
 ## Boom
 
+## 23rd Feb, 2015
+
+Player now can use bombs to kill monsters. Also, the bomb now cannot be moved through.
+The issue that when player leave the bomb, the bom travels along as the player is now fixed.
+
 ## 22nd Feb, 2015
 
-Give the player some immortal time after the dead (by monsters or bombs)
+Give the player some immortal time after the dead (by monsters or bombs).
 
 ## 21st Feb, 2015
 

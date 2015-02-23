@@ -1,5 +1,6 @@
 import pygame
 import random
+import copy
 
 
 class GameGUI:
@@ -114,6 +115,7 @@ class GameGUI:
                                                                              "up": (120, 0),
                                                                              "right": (60, 0),
                                                                              "left": (60, 0)})
+                self.map.add_sprites(self.monster, "monster")
 
             self.characters = [self.main_character]
             self.monsters = [self.monster]
@@ -124,8 +126,6 @@ class GameGUI:
             self.state.track_players_treasures()
             self.monster.move()
             self.state.track_players_monsters()
-            #print self.monster.if_change_pos(), self.monster.pos, self.monster.previous_pos
-            self.display_surface.blit(self.monster.get_img(), self.monster.get_pos())
 
             # I want the bomb sprites stay longer than 1 frame (actually 7 frames) so I add this for loop here
             for time_tracker in self.redundant_time_trackers:
@@ -333,11 +333,15 @@ class Map:
         walls, treasures, trees, people ... to sprites list
         """
         self.sprites.append(sprite)
-        self.sprite_pos.append(sprite.get_pos())
         if type_of_sprite == "wall":
             self.walls.append(sprite)
+            self.sprite_pos.append(sprite.get_pos())
         elif type_of_sprite == "treasure":
             self.treasures.append(sprite)
+            self.sprite_pos.append(sprite.get_pos())
+        elif type_of_sprite == "bomb":
+            self.sprite_pos.append(sprite.get_pos())
+
 
     def remove_sprite_pos(self, sprite_pos):
         """
@@ -603,7 +607,7 @@ class Character(Sprite):
         return char_pos[0]-4, char_pos[1]
 
     def get_pos(self):
-        return self.pos
+        return copy.copy(self.pos)
 
     def increment_pos(self, direction):
         if self.gui.map.movement_approve(self.pos, direction):
