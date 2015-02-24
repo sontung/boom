@@ -1,6 +1,7 @@
 import pygame
 import random
 import copy
+import event_logic
 
 
 class GameGUI:
@@ -25,6 +26,7 @@ class GameGUI:
         # this list below keeping track of the bombs these are exploding, so their
         # explosion sprites stay for 7 frames.
         self.redundant_time_trackers = []
+        self.number_of_monsters = 4
         self.colors = {"white": (255, 255, 255),
                        "black": (41, 36, 33),
                        "navy": (0, 0, 128),
@@ -45,9 +47,11 @@ class GameGUI:
         pygame.display.set_caption("Boom")
         self.font = pygame.font.Font("assets\\fonts\Cutie Patootie Skinny.ttf", self.font_size)
         self.font_bold = pygame.font.Font("assets\\fonts\Cutie Patootie.ttf", self.font_size)
-        self.pos = (self.window_width/2, self.window_height/2)  # for configuring game difficulty
-        self.dummy_var = 0  # serves as a way to make blinking animation when the player loses all the lives
-        self.done_blinking_animation = False  # serves as a var to keep track if we've done the blinking animation or not
+        self.pos = (self.window_width/2, self.window_height/2)  # for configuring game difficulty.
+        self.dummy_var = 0  # serves as a way to make blinking animation when the player loses all the lives.
+        self.dummy_var1 = 0  # how many frames between each monster to come out.
+        self.done_creating_monsters = False
+        self.done_blinking_animation = False  # serves as a var to keep track if we've done the blinking animation or not.
 
     def make_text(self, text, color, bg_color, center):
         """
@@ -66,6 +70,24 @@ class GameGUI:
 
     def set_doneBlinkingAnimation(self, val):
         self.done_blinking_animation = val
+
+    def if_time_to_release_monster(self):
+        """
+        Return True if it's time to create a new monster.
+        """
+        self.dummy_var1 += 1
+        if self.dummy_var1 == 20:  # I want new monster coming out after 20 frames.
+            self.dummy_var1 = 0
+            return True
+        else:
+            return False
+
+    def set_doneCreatingMonsters(self):
+        """
+        Set the variable to True if we're done creating monsters.
+        """
+        if len(self.monsters) == self.number_of_monsters:
+            self.done_creating_monsters = True
 
     def add_time_tracker(self, time_tracker):
         """
@@ -110,30 +132,36 @@ class GameGUI:
                     for index_y in range(30, self.window_height-self.information_bar_height, self.font_size*10):
                         self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self, "extra explode"), "treasure")
 
-            if not self.monsters:
-                self.monster = Monster([120, 30], self.monster_sprite, self, {"down": (0, 0),
-                                                                             "up": (120, 0),
-                                                                             "right": (60, 0),
-                                                                             "left": (60, 0)})
-                self.map.add_sprites(self.monster, "monster")
+            if not self.done_creating_monsters:
+                if self.if_time_to_release_monster():
+                    i = len(self.monsters)
+                    monster = Monster([120, 30], self.monster_sprite, self,
+                                      {"down": (0, 0), "up": (120, 0),"right": (60, 0), "left": (60, 0)}, i % 4)
+                    self.monsters.append(monster)
+                    self.map.add_sprites(monster, "monster")
+                    self.set_doneCreatingMonsters()
 
             self.characters = [self.main_character]
-            self.monsters = [self.monster]
             self.buttons = []
             self.map.draw_background()
             self.map.draw_sprite()
             self.state.update_players()
             self.state.track_players_treasures()
-            self.monster.move()
+            for monster in self.monsters[:]:
+                if not monster.dead:
+                    monster.move()
             self.state.track_players_monsters()
 
-            # I want the bomb sprites stay longer than 1 frame (actually 7 frames) so I add this for loop here
+            # I want some sprites stay longer than 1 frame (actually 7 frames) so I add this for loop here
             for time_tracker in self.redundant_time_trackers:
-                if time_tracker.get_boom().get_count() >= 7:
+                if time_tracker.time_up():
                     self.redundant_time_trackers.remove(time_tracker)
                 else:
-                    time_tracker.get_boom().explode()
-                    time_tracker.get_boom().increment_count()
+                    try:
+                        time_tracker.get_sprite().explode()
+                    except AttributeError:
+                        self.display_surface.blit(time_tracker.get_sprite().get_img(),
+                                                  time_tracker.get_sprite().get_pos())
 
             lives_sur, lives_rect = self.make_text("Lives: %d" % self.state.get_players()[0].get_lives(),
                                                    self.text_color, self.tile_color,
@@ -273,12 +301,6 @@ class Boom:
             elif self.prev_sprite == 2:
                 return self.boom_sprite1
 
-    def increment_count(self):
-        self.count += 1
-
-    def get_count(self):
-        return self.count
-
     def get_pos(self):
         return self.pos
 
@@ -342,19 +364,24 @@ class Map:
         elif type_of_sprite == "bomb":
             self.sprite_pos.append(sprite.get_pos())
 
-
     def remove_sprite_pos(self, sprite_pos):
         """
         Remove the sprite_pos so movement through this sprite
         is possible.
         """
-        self.sprite_pos.remove(sprite_pos)
+        try:
+            self.sprite_pos.remove(sprite_pos)
+        except ValueError:
+            pass
 
     def remove_sprite(self, sprite, type_of_sprite=None):
         """
         Remove the specified sprite.
         """
-        self.sprites.remove(sprite)
+        try:
+            self.sprites.remove(sprite)
+        except ValueError:
+            pass
         try:
             self.sprite_pos.remove(sprite.get_pos())
         except ValueError:
@@ -425,10 +452,12 @@ class Wall(Sprite):
 
 
 class Monster(Sprite):
-    def __init__(self, pos, sheet, _game_gui, loc_in_sheet):
+    def __init__(self, pos, sheet, _game_gui, loc_in_sheet, type_of_monster=0):
         Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
         self.count = 0  # serves as a var to keep track of how many frames passed
         self.current_direction = "down"  # only change this direction if not able to move further
+        self.type_of_monster = type_of_monster  # this var indicates which type of monster (red monster or blue monster)
+        self.dead = False
         self.map = {                     # a dictionary helping choose which img to display according to the movement
             "up":    [[0], [1]],
             "down":  [[0], [1]],
@@ -438,12 +467,12 @@ class Monster(Sprite):
 
     def update_img(self, direction):
         if direction == "right":
-            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[direction][0]+30*self.map[direction][0].pop(),
-                                            self.loc_in_sheet[direction][1], 30, 30))
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[direction][0] + 30*self.map[direction][0].pop(),
+                                            self.loc_in_sheet[direction][1] + 28*self.type_of_monster, 30, 28))
             self.img = pygame.transform.flip(self.sheet.subsurface(self.sheet.get_clip()), 1, 0)
         else:
-            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[direction][0]+30*self.map[direction][0].pop(),
-                                            self.loc_in_sheet[direction][1], 30, 30))
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[direction][0] + 30*self.map[direction][0].pop(),
+                                            self.loc_in_sheet[direction][1] + 28*self.type_of_monster, 30, 28))
             self.img = self.sheet.subsurface(self.sheet.get_clip())
 
     def update_map(self, direction):
@@ -527,6 +556,16 @@ class Monster(Sprite):
                 self.pos[0] += 15
                 self.update_img(direction)
                 self.update_map(direction)
+
+    def die(self):
+        """
+        Play a nice sprite when a monster dies.
+        """
+        self.sheet.set_clip(pygame.Rect(0, 112, 30, 28))
+        self.img = self.sheet.subsurface(self.sheet.get_clip())
+        self.dead = True
+        self.gui.monsters.remove(self)
+        self.gui.add_time_tracker(event_logic.TimeTracking(2, self))
 
 
 class Treasure(Sprite):

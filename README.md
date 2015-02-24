@@ -1,5 +1,10 @@
 ## Boom
 
+## 24th Feb, 2015
+
+Add the ability to create multiple monster at a time, and each of them comes out once
+a time in nice way. Also, when the monster dies, a nice sprite is displayed.
+
 ## 23rd Feb, 2015
 
 Player now can use bombs to kill monsters. Also, the bomb now cannot be moved through.

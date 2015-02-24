@@ -5,11 +5,10 @@ from pygame.locals import *
 
 
 class TimeTracking:
-    def __init__(self, number_of_seconds, boom, _game_state):
+    def __init__(self, number_of_seconds, sprite):
         self.number_of_seconds = number_of_seconds
         self.time_at_the_moment = time.time()
-        self.boom = boom
-        self.state = _game_state
+        self.sprite = sprite
 
     def time_up(self):
         """
@@ -20,17 +19,19 @@ class TimeTracking:
         else:
             return False
 
-    def get_boom(self):
-        return self.boom
+    def set_time(self, val):
+        self.time_at_the_moment = time.time()
+        self.number_of_seconds = val
 
-    def trigger(self):
+    def get_sprite(self):
+        return self.sprite
+
+    def trigger(self, func):
         """
-        Explode the bomb after time is up
+        Run the func function and time is up
         """
         if self.time_up():
-            self.boom.explode()
-            self.state.track_players_bombs(self.boom.get_pos())
-            self.state.track_treasures(self.boom.get_pos())
+            func()
             return True
         return False
 
@@ -56,10 +57,13 @@ class EventLogic:
 
     def event_handler(self):
         for time_tracker in self.time_trackers:
-            if time_tracker.trigger():
+            if time_tracker.trigger(time_tracker.get_sprite().explode):
+                self._game_state.track_players_bombs(time_tracker.get_sprite().get_pos())
+                self._game_state.track_treasures(time_tracker.get_sprite().get_pos())
+                time_tracker.set_time(0.3)
                 self._game_gui.add_time_tracker(time_tracker)
                 self.time_trackers.remove(time_tracker)
-                self._game_gui.map.remove_sprite(time_tracker.get_boom())
+                self._game_gui.map.remove_sprite(time_tracker.get_sprite())
 
         event = pygame.event.poll()
         if event.type == MOUSEBUTTONUP:
@@ -105,6 +109,6 @@ class EventLogic:
                 char_pos = self._game_gui.characters[0].get_pos()[0]-4, self._game_gui.characters[0].get_pos()[1]
                 boom = self._game_gui.create_boom(char_pos)
                 self._game_gui.map.add_sprites(boom, "bomb")
-                boom_trigger = TimeTracking(2, boom, self._game_state)
+                boom_trigger = TimeTracking(2, boom)
                 self.time_trackers.append(boom_trigger)
                 pygame.display.update()
