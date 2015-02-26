@@ -2,6 +2,7 @@ import pygame
 import random
 import copy
 import event_logic
+import map_lvl_1
 
 
 class GameGUI:
@@ -20,6 +21,7 @@ class GameGUI:
         self.window_height = 600
         self.information_bar_height = self.window_height / 4  # the height of the information bar
         self.font_size = 30
+        self.tile_size = 30
         self.x_margin = 78
         self.y_margin = 150
         self.map = None
@@ -120,22 +122,48 @@ class GameGUI:
 
         elif state == "new game":
             if not self.characters:
-                self.main_character = Character([424, self.window_height/2], self.male_char_sprite_sheet,
+                self.main_character = Character([4, 0], self.male_char_sprite_sheet,
                                                 {"up": (66, 0), "down": (0, 0), "right": (132, 0), "left": (132, 0)},
                                                 self)
             if not self.map:
                 self.map = Map(self, Sprite(None, self.sprite_sheet, {"down": (30, 0)}, self))
-                for index_x in range(30, self.window_width, self.font_size*2):
-                    for index_y in range(30, self.window_height-self.information_bar_height, self.font_size*2):
-                        self.map.add_sprites(Wall((index_x, index_y), self.sprite_sheet, self), "wall")
-                for index_x in range(0, self.window_width, self.font_size*9):
-                    for index_y in range(30, self.window_height-self.information_bar_height, self.font_size*10):
-                        self.map.add_sprites(Treasure((index_x, index_y), self.sprite_sheet, self, "extra explode"), "treasure")
+
+                # Adds unbreakable wall sprites
+                wall_map = map_lvl_1.WALL_MAP
+                for index_y in range(len(wall_map)):
+                    for index_x in wall_map[index_y]:
+                        if index_x != 0:
+                            self.map.add_sprites(Wall((index_x*self.tile_size, index_y*self.tile_size),
+                                                      self.sprite_sheet, self), "wall")
+
+                # Adds breakable wall sprites
+                none_map = map_lvl_1.NONE_MAP
+                for index_y in range(len(none_map)):
+                    for index_x in none_map[index_y]:
+                        if index_x is not None:
+                            self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
+                                                          self.sprite_sheet, self, "none"), "treasure")
+
+                # Adds extra live treasure sprites
+                el_map = map_lvl_1.EL_MAP
+                for index_y in range(len(el_map)):
+                    for index_x in el_map[index_y]:
+                        if index_x is not None:
+                            self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
+                                                          self.sprite_sheet, self, "extra live"), "treasure")
+
+                # Add extra explode treasure sprites
+                ee_map = map_lvl_1.EE_MAP
+                for index_y in range(len(ee_map)):
+                    for index_x in ee_map[index_y]:
+                        if index_x is not None:
+                            self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
+                                                          self.sprite_sheet, self, "extra explode"), "treasure")
 
             if not self.done_creating_monsters:
                 if self.if_time_to_release_monster():
                     i = len(self.monsters)
-                    monster = Monster([120, 30], self.monster_sprite, self,
+                    monster = Monster([420, 210], self.monster_sprite, self,
                                       {"down": (0, 0), "up": (120, 0),"right": (60, 0), "left": (60, 0)}, i % 4)
                     self.monsters.append(monster)
                     self.map.add_sprites(monster, "monster")
@@ -447,7 +475,7 @@ class Sprite:
 
 
 class Wall(Sprite):
-    def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (560, 0)}):
+    def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (590, 0)}):
         Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
 
 
@@ -569,7 +597,7 @@ class Monster(Sprite):
 
 
 class Treasure(Sprite):
-    def __init__(self, pos, sheet, _game_gui, buff, loc_in_sheet={"down": (90, 0)}):
+    def __init__(self, pos, sheet, _game_gui, buff, loc_in_sheet={"down": (560, 0)}):
         Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
         if buff == "extra live":
             self.loc_in_sheet["secondary"] = (540, 0)
@@ -577,6 +605,10 @@ class Treasure(Sprite):
             self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
         elif buff == "extra explode":
             self.loc_in_sheet["secondary"] = (37, 30)
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 20, 20))
+            self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
+        elif buff == "none":
+            self.loc_in_sheet["secondary"] = (30, 0)
             self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 20, 20))
             self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
         self.var_buff = buff

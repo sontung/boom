@@ -75,7 +75,8 @@ class GameState:
         for player in self.players:
             for treasure in treasures:
                 if treasure.ready_to_eat():
-                    if player.get_char().get_pos() == treasure.get_pos():
+                    pos = player.get_char().get_pos()[0]-4, player.get_char().get_pos()[1]
+                    if pos == treasure.get_pos():
                         treasure.buff(player)
                         self.gui.map.remove_sprite(treasure, "treasure")
 

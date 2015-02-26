@@ -1,5 +1,10 @@
 ## Boom
 
+## 26th Feb, 2015
+
+Code the template of the map and complete the story of the game. Each of the player try to find a key
+that gives them the permission to open the door. Who is able to open the door first is the winner.
+
 ## 24th Feb, 2015
 
 Add the ability to create multiple monster at a time, and each of them comes out once
