@@ -112,3 +112,6 @@ class EventLogic:
                 boom_trigger = TimeTracking(2, boom)
                 self.time_trackers.append(boom_trigger)
                 pygame.display.update()
+
+            elif event.key == K_e:
+                self._game_gui.set_request_open_door()

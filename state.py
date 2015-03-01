@@ -117,6 +117,7 @@ class PlayerState:
         self.extra_explode = 0
         self.immortal_time = 2  # during this duration, the player is immortal.
         self.time_at_the_moment = 0  # time at the moment the player dies.
+        self.ability_open_door = False  # True if this player can open the door.
 
     def time_up(self):
         if time.time() - self.time_at_the_moment >= self.immortal_time:
@@ -147,6 +148,15 @@ class PlayerState:
 
     def get_extra_explode(self):
         return self.extra_explode
+
+    def get_key(self):
+        return self.ability_open_door
+
+    def update_key(self):
+        """
+        Update the ability to open a door.
+        """
+        self.ability_open_door = True
 
     def update_extra_explode(self, amount):
         """

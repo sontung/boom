@@ -94,3 +94,21 @@ def generate_ee_treasure_map():
     return _list
 
 EE_MAP = generate_ee_treasure_map()
+
+
+def generate_key_treasure_map():
+    """
+    Generates key map for level 1.
+    """
+    _list = [[None for x in range(0, WINDOW_WIDTH, TILE_SIZE)] for y in range(0, WINDOW_HEIGHT, TILE_SIZE)]
+    numbers = 2
+    for number in range(numbers):
+        y = random.randrange(len(_list))
+        x = random.randrange(len(_list[0]))
+        while NONE_MAP[y][x] is None and EL_MAP[y][x] is None and EE_MAP[y][x] is None:
+            y = random.randrange(len(_list))
+            x = random.randrange(len(_list[0]))
+        _list[y][x] = x
+    return _list
+
+KEY_MAP = generate_key_treasure_map()

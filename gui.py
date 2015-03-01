@@ -13,6 +13,7 @@ class GameGUI:
         self.logic = _game_logic
         self.sprite_sheet = pygame.image.load("assets\images\sprites_sheet_main.png")
         self.monster_sprite = pygame.image.load("assets\images\monster.png")
+        self.door_sprite = pygame.image.load("assets\images\doors.png")
         self.male_char_sprite_sheet = pygame.image.load("assets\images\\male.png")
         self.female_char_sprite_sheet = pygame.image.load("assets\images\\female.png")
         self.characters = []
@@ -28,7 +29,7 @@ class GameGUI:
         # this list below keeping track of the bombs these are exploding, so their
         # explosion sprites stay for 7 frames.
         self.redundant_time_trackers = []
-        self.number_of_monsters = 4
+        self.number_of_monsters = 12
         self.colors = {"white": (255, 255, 255),
                        "black": (41, 36, 33),
                        "navy": (0, 0, 128),
@@ -52,8 +53,9 @@ class GameGUI:
         self.pos = (self.window_width/2, self.window_height/2)  # for configuring game difficulty.
         self.dummy_var = 0  # serves as a way to make blinking animation when the player loses all the lives.
         self.dummy_var1 = 0  # how many frames between each monster to come out.
+        self.request_open_door = False  # True if the user press E to open the door.
         self.done_creating_monsters = False
-        self.done_blinking_animation = False  # serves as a var to keep track if we've done the blinking animation or not.
+        self.done_blinking_animation = False  # serves as a var to keep track if we've done the blinking animation.
 
     def make_text(self, text, color, bg_color, center):
         """
@@ -96,6 +98,9 @@ class GameGUI:
         Add redundant time tracker.
         """
         self.redundant_time_trackers.append(time_tracker)
+
+    def set_request_open_door(self):
+        self.request_open_door = True
 
     def draw(self, state):
         """
@@ -160,6 +165,17 @@ class GameGUI:
                             self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
                                                           self.sprite_sheet, self, "extra explode"), "treasure")
 
+                # Add key treasure sprite
+                key_map = map_lvl_1.KEY_MAP
+                for index_y in range(len(key_map)):
+                    for index_x in key_map[index_y]:
+                        if index_x is not None:
+                            self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
+                                                          self.sprite_sheet, self, "key"), "treasure")
+
+                # Add door sprite
+                self.map.add_sprites(Door((420, 210), self.door_sprite, self), "door")
+
             if not self.done_creating_monsters:
                 if self.if_time_to_release_monster():
                     i = len(self.monsters)
@@ -178,6 +194,9 @@ class GameGUI:
             for monster in self.monsters[:]:
                 if not monster.dead:
                     monster.move()
+            if self.request_open_door:
+                for door in self.map.doors:
+                    door.open_the_door(self.state.get_players()[0])
             self.state.track_players_monsters()
 
             # I want some sprites stay longer than 1 frame (actually 7 frames) so I add this for loop here
@@ -361,6 +380,7 @@ class Map:
         self.gui = _game_gui
         self.walls = []
         self.treasures = []
+        self.doors = []
         self.sprites = []
         self.sprite_pos = []
         self.background = back_ground_sprite
@@ -388,6 +408,9 @@ class Map:
             self.sprite_pos.append(sprite.get_pos())
         elif type_of_sprite == "treasure":
             self.treasures.append(sprite)
+            self.sprite_pos.append(sprite.get_pos())
+        elif type_of_sprite == "door":
+            self.doors.append(sprite)
             self.sprite_pos.append(sprite.get_pos())
         elif type_of_sprite == "bomb":
             self.sprite_pos.append(sprite.get_pos())
@@ -607,6 +630,10 @@ class Treasure(Sprite):
             self.loc_in_sheet["secondary"] = (37, 30)
             self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 20, 20))
             self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
+        elif buff == "key":
+            self.loc_in_sheet["secondary"] = (0, 80)
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 20, 20))
+            self.secondary_img = self.sheet.subsurface(self.sheet.get_clip())
         elif buff == "none":
             self.loc_in_sheet["secondary"] = (30, 0)
             self.sheet.set_clip(pygame.Rect(self.loc_in_sheet["secondary"][0], self.loc_in_sheet["secondary"][1], 20, 20))
@@ -634,6 +661,38 @@ class Treasure(Sprite):
             player.update_lives(1)
         elif self.var_buff == "extra explode":
             player.update_extra_explode(1)
+        elif self.var_buff == "key":
+            player.update_key()
+
+
+class Door(Sprite):
+    def __init__(self, pos, sheet, _game_gui, loc_in_sheet={"down": (0, 0)}):
+        Sprite.__init__(self, pos, sheet, loc_in_sheet, _game_gui)
+        for i in range(1, 11):
+            self.loc_in_sheet[str(i)] = (i*315.0/11, 0)
+        self.frames = 3  # how many frames each sprite lasts
+        self.prev_number = 0  # the previous sprite index in the sheet
+        self.completely_open = False
+
+    def set_completely_open(self):
+        if self.prev_number == 10:
+            self.completely_open = True
+            self.gui.map.remove_sprite_pos(self.get_pos())
+
+    def update_img(self, number):
+        if self.frames > 0:
+            self.frames -= 1
+        else:
+            self.sheet.set_clip(pygame.Rect(self.loc_in_sheet[number][0], self.loc_in_sheet[number][1], 315.0/11, 30))
+            self.img = self.sheet.subsurface(self.sheet.get_clip())
+            self.prev_number += 1
+            self.frames = 3
+
+    def open_the_door(self, player):
+        if player.get_key() and player.get_char().get_tile_pos() == (420, 240):
+            if not self.completely_open:
+                self.update_img(str(self.prev_number + 1))
+                self.set_completely_open()
 
 
 class Character(Sprite):
@@ -679,6 +738,9 @@ class Character(Sprite):
 
     def get_pos(self):
         return copy.copy(self.pos)
+
+    def get_tile_pos(self):
+        return self.pos[0]-4, self.pos[1]
 
     def increment_pos(self, direction):
         if self.gui.map.movement_approve(self.pos, direction):

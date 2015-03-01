@@ -1,5 +1,11 @@
 ## Boom
 
+## 1st Mar, 2015
+
+Add door sprite and key sprite. Whenever a player found a key, he/she can eat the key and then has the
+permission to open the door of victory. To open the door, player must stand before the door and have the key 
+of course. After the door is open, the player can move in to actually win the game.
+
 ## 26th Feb, 2015
 
 Code the template of the map and complete the story of the game. Each of the player try to find a key
