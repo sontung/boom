@@ -1,5 +1,10 @@
 ## Boom
 
+## 15th Mar, 2015
+
+Fix the bug where extra explode buff doesn't make much sense. Also, player now only can break 1 wall in the same row, which
+means you cannot break 2 consecutive wall (one after the other) even if your bombs are powerful enough.
+
 ## 1st Mar, 2015
 
 Add door sprite and key sprite. Whenever a player found a key, he/she can eat the key and then has the

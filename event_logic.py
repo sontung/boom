@@ -58,8 +58,8 @@ class EventLogic:
     def event_handler(self):
         for time_tracker in self.time_trackers:
             if time_tracker.trigger(time_tracker.get_sprite().explode):
-                self._game_state.track_players_bombs(time_tracker.get_sprite().get_pos())
-                self._game_state.track_treasures(time_tracker.get_sprite().get_pos())
+                self._game_state.track_players_bombs(time_tracker.get_sprite())
+                self._game_state.track_treasures(time_tracker.get_sprite())
                 time_tracker.set_time(0.3)
                 self._game_gui.add_time_tracker(time_tracker)
                 self.time_trackers.remove(time_tracker)

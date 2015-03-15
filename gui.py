@@ -29,7 +29,7 @@ class GameGUI:
         # this list below keeping track of the bombs these are exploding, so their
         # explosion sprites stay for 7 frames.
         self.redundant_time_trackers = []
-        self.number_of_monsters = 12
+        self.number_of_monsters = 5
         self.colors = {"white": (255, 255, 255),
                        "black": (41, 36, 33),
                        "navy": (0, 0, 128),
@@ -67,7 +67,7 @@ class GameGUI:
         return text_surf, text_rect
 
     def create_boom(self, pos):
-        return Boom(pos, self.sprite_sheet, self.display_surface, self.state.get_players()[0].get_extra_explode())
+        return Boom(pos, self.sprite_sheet, self.display_surface, self, self.state.get_players()[0].get_extra_explode())
 
     def get_characters(self):
         return self.characters
@@ -235,6 +235,16 @@ class GameGUI:
                     self.dummy_var = 0
                     self.state.get_players()[0].reset_lives()
                 self.dummy_var += 1
+        elif state == "game over":
+            result = self.state.get_result()
+            if result == "win":
+                win_sur, win_rect = self.make_text("Congratulations, You won", self.text_color, self.tile_color,
+                                                   (self.window_width/2, self.window_height/2))
+                self.display_surface.blit(win_sur, win_rect)
+            elif result == "lose":
+                lose_sur, lose_rect = self.make_text("Sorry, You lost", self.text_color, self.tile_color,
+                                                     (self.window_width/2, self.window_height/2))
+                self.display_surface.blit(lose_sur, lose_rect)
 
 
 class Button:
@@ -283,7 +293,7 @@ class Button:
 
 
 class Boom:
-    def __init__(self, pos, sheet, surface, extra_explode=0):
+    def __init__(self, pos, sheet, surface, gui, extra_explode=0):
         self.pos = pos
         self.sheet = sheet
         self.loc_in_sheet = {"boom1": (480, 0),
@@ -331,6 +341,9 @@ class Boom:
         self.col_explode_sprite = self.sheet.subsurface(self.sheet.get_clip())
 
         self.extra_explode = extra_explode  # by default, a boom will explode to 4 sides with the length of 2 tiles
+        self.right = 3 + self.extra_explode  # the right most limit of the explosion
+        self.left = -2 - self.extra_explode  # # the left most limit of the explosion
+        self.limit = gui.map.decide_limit(self)
 
     def get_img(self):
         self.dummy_var += 1
@@ -351,24 +364,38 @@ class Boom:
     def get_pos(self):
         return self.pos
 
+    def get_limit_calculated(self):
+        """
+        Return the limits calculated by Map.
+        """
+        return self.limit
+
+    def get_limit(self):
+        """
+        Return the limits of the explosion.
+        """
+        return self.left, self.right
+
     def update_pos(self, new_pos):
         self.pos = new_pos
 
     def explode(self):
-        right = 3 + self.extra_explode
-        left = -2 - self.extra_explode
-        for index in range(left, right):
-            if index == left:
-                self.surface.blit(self.up_explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
+        for index in range(self.limit[1], self.limit[0]):
+            if index == self.limit[1]:
                 self.surface.blit(self.left_explode_sprite, tuple([self.pos[0]+30*index, self.pos[1]]))
-            elif index == 0:
-                self.surface.blit(self.center_explode_sprite, tuple([self.pos[0], self.pos[1]]))
-            elif index == right-1:
-                self.surface.blit(self.down_explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
+            elif index == self.limit[0]-1:
                 self.surface.blit(self.right_explode_sprite, tuple([self.pos[0]+30*index, self.pos[1]]))
             else:
-                self.surface.blit(self.col_explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
                 self.surface.blit(self.row_explode_sprite, tuple([self.pos[0]+30*index, self.pos[1]]))
+        for index in range(self.limit[3], self.limit[2]):
+            if index == self.limit[3]:
+                self.surface.blit(self.up_explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
+            elif index == 0:
+                self.surface.blit(self.center_explode_sprite, tuple([self.pos[0], self.pos[1]]))
+            elif index == self.limit[2]-1:
+                self.surface.blit(self.down_explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
+            else:
+                self.surface.blit(self.col_explode_sprite, tuple([self.pos[0], self.pos[1]+30*index]))
         pygame.display.update()
 
 
@@ -449,20 +476,39 @@ class Map:
         for sprite in self.sprites:
             self.gui.display_surface.blit(sprite.get_img(), sprite.get_pos())
 
-    def map_pos(self, char_pos):
+    def decide_limit(self, boom):
         """
-        Map the position of the character to the new position (a new one is a
-        multiplication of 30) in the map, then help deciding movement approvement.
+        Decide the limits of the explosion.
         """
-        return char_pos[0]-4, char_pos[1]
+        boom_pos = boom.get_pos()
+        left, right = boom.get_limit()
+        right_limit = right
+        left_limit = left
+        up_limit = right
+        down_limit = left
+        for x in range(boom_pos[0], boom_pos[0]+right*30, 30):
+            if (x, boom_pos[1]) in self.sprite_pos:
+                right_limit = (x-boom_pos[0])/30+1
+                break
+        for x in range(boom_pos[0], boom_pos[0]+left*30, -30):
+            if (x, boom_pos[1]) in self.sprite_pos:
+                left_limit = (x-boom_pos[0])/30
+                break
+        for y in range(boom_pos[1], boom_pos[1]+right*30, 30):
+            if (boom_pos[0], y) in self.sprite_pos:
+                up_limit = (y-boom_pos[1])/30+1
+                break
+        for y in range(boom_pos[1], boom_pos[1]+left*30, -30):
+            if (boom_pos[0], y) in self.sprite_pos:
+                down_limit = (y-boom_pos[1])/30
+                break
+        return right_limit, left_limit, up_limit, down_limit
 
-    def movement_approve(self, char_pos, direction, var_type="character"):
+    def movement_approve(self, char_pos, direction):
         """
         Approve the movement of the character or monster along that direction
         if it won't pass through any sprites.
         """
-        if var_type == "character":
-            char_pos = self.map_pos(char_pos)
         if direction == "up":
             char_pos_after_move = char_pos[0], char_pos[1]-30
         elif direction == "down":
@@ -542,12 +588,12 @@ class Monster(Sprite):
         """
         Decide which direction for the monster.
         """
-        if self.gui.map.movement_approve(self.pos, self.current_direction, "monster") and not self.if_reach_edges():
+        if self.gui.map.movement_approve(self.pos, self.current_direction) and not self.if_reach_edges():
             return self.current_direction
         else:
             possible_moves = []
             for possible_move in ["up", "left", "down", "right"]:
-                if self.gui.map.movement_approve(self.pos, possible_move, "monster"):
+                if self.gui.map.movement_approve(self.pos, possible_move):
                     possible_moves.append(possible_move)
             self.set_current_direction(random.choice(possible_moves))
             return self.current_direction
@@ -743,7 +789,7 @@ class Character(Sprite):
         return self.pos[0]-4, self.pos[1]
 
     def increment_pos(self, direction):
-        if self.gui.map.movement_approve(self.pos, direction):
+        if self.gui.map.movement_approve(self.get_tile_pos(), direction):
             if direction == "up" and self.pos[1] > 0:
                 self.pos[1] -= 10
                 self.update_img(direction)

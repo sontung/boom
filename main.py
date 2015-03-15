@@ -14,4 +14,5 @@ if __name__ == "__main__":
     while True:
         game_gui.draw(game_state.get_state())
         game_event_handler.event_handler()
+        game_state.if_game_over()
         pygame.display.update()

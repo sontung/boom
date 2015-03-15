@@ -9,6 +9,7 @@ class GameState:
         self.state = "welcome"
         self.gui = _game_gui
         self.players = []
+        self.result = None
 
     def add_gui(self, _game_gui):
         """
@@ -23,6 +24,12 @@ class GameState:
     def get_state(self):
         return self.state
 
+    def set_result(self, val):
+        self.result = val
+
+    def get_result(self):
+        return self.result
+
     def update_players(self):
         if not self.players:
             self.players = [PlayerState(character) for character in self.gui.get_characters()]
@@ -30,18 +37,30 @@ class GameState:
     def get_players(self):
         return self.players
 
-    def if_near_boom(self, player_pos, boom_pos):
+    def if_game_over(self):
+        for player in self.players:
+            if player.get_char().get_tile_pos() == self.gui.map.doors[0].get_pos():
+                self.set_state("game over")
+                self.set_result("win")
+            elif player.get_lives() == 0:
+                self.set_state("game over")
+                self.set_result("lose")
+
+    def if_near_boom(self, player_pos, boom):
         """
         Check to see if the player or something is standing
         near the bomb when it explodes.
         """
+        boom_pos = boom.get_pos()
+        limit = boom.get_limit_calculated()
+        print limit
         if player_pos[0] == boom_pos[0]:
-            if player_pos[1] in range(boom_pos[1]-2*30, boom_pos[1]+3*30, 30):
+            if player_pos[1] in range(boom_pos[1]+limit[3]*30, boom_pos[1]+limit[2]*30, 30):
                 return True
             else:
                 return False
         elif player_pos[1] == boom_pos[1]:
-            if player_pos[0] in range(boom_pos[0]-2*30, boom_pos[0]+3*30, 30):
+            if player_pos[0] in range(boom_pos[0]+limit[1]*30, boom_pos[0]+limit[0]*30, 30):
                 return True
             else:
                 return False
@@ -58,13 +77,13 @@ class GameState:
                 return True
         return False
 
-    def track_treasures(self, boom_pos):
+    def track_treasures(self, boom):
         """
         Track the states of treasures in the map.
         """
         treasures = self.gui.map.get_treasures()
         for treasure in treasures:
-            if self.if_near_boom(treasure.get_pos(), boom_pos):
+            if self.if_near_boom(treasure.get_pos(), boom):
                 treasure.switch_img()
 
     def track_players_treasures(self):
@@ -90,17 +109,17 @@ class GameState:
                 player.set_time_dead()
                 self.gui.set_doneBlinkingAnimation(False)
 
-    def track_players_bombs(self, boom_pos):
+    def track_players_bombs(self, boom):
         """
         Track the play of players when they're near bombs.
         """
         for player in self.players:
-            if self.if_near_boom(player.get_char().get_pos(), boom_pos) and not player.if_immortal():
+            if self.if_near_boom(player.get_char().get_tile_pos(), boom) and not player.if_immortal():
                 player.update_lives(-1)
                 player.set_time_dead()
                 self.gui.set_doneBlinkingAnimation(False)
             for monster in self.gui.monsters:
-                if self.if_near_boom(monster.get_pos(), boom_pos):
+                if self.if_near_boom(monster.get_pos(), boom):
                     monster.die()
                     self.gui.map.remove_sprite(monster)
 
