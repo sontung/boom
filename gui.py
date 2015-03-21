@@ -18,9 +18,9 @@ class GameGUI:
         self.female_char_sprite_sheet = pygame.image.load("assets\images\\female.png")
         self.characters = []
         self.monsters = []
-        self.window_width = 870
-        self.window_height = 600
-        self.information_bar_height = self.window_height / 4  # the height of the information bar
+        self.window_width = 570
+        self.window_height = 420
+        self.information_bar_height = 120  # the height of the information bar
         self.font_size = 30
         self.tile_size = 30
         self.x_margin = 78
@@ -142,12 +142,12 @@ class GameGUI:
                                                       self.sprite_sheet, self), "wall")
 
                 # Adds breakable wall sprites
-                none_map = map_lvl_1.NONE_MAP
-                for index_y in range(len(none_map)):
-                    for index_x in none_map[index_y]:
-                        if index_x is not None:
-                            self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
-                                                          self.sprite_sheet, self, "none"), "treasure")
+                # none_map = map_lvl_1.NONE_MAP
+                # for index_y in range(len(none_map)):
+                #     for index_x in none_map[index_y]:
+                #         if index_x is not None:
+                #             self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
+                #                                           self.sprite_sheet, self, "none"), "treasure")
 
                 # Adds extra live treasure sprites
                 el_map = map_lvl_1.EL_MAP
@@ -174,12 +174,12 @@ class GameGUI:
                                                           self.sprite_sheet, self, "key"), "treasure")
 
                 # Add door sprite
-                self.map.add_sprites(Door((420, 210), self.door_sprite, self), "door")
+                self.map.add_sprites(Door((270, 150), self.door_sprite, self), "door")
 
             if not self.done_creating_monsters:
                 if self.if_time_to_release_monster():
                     i = len(self.monsters)
-                    monster = Monster([420, 210], self.monster_sprite, self,
+                    monster = Monster([270, 150], self.monster_sprite, self,
                                       {"down": (0, 0), "up": (120, 0),"right": (60, 0), "left": (60, 0)}, i % 4)
                     self.monsters.append(monster)
                     self.map.add_sprites(monster, "monster")
@@ -798,7 +798,7 @@ class Character(Sprite):
                 self.pos[1] += 10
                 self.update_img(direction)
                 self.update_map(direction)
-            elif direction == "left" and self.pos[0] > 0:
+            elif direction == "left" and self.pos[0] > 4:
                 self.pos[0] -= 10
                 self.update_img(direction)
                 self.update_map(direction)

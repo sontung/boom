@@ -1,5 +1,9 @@
 ## Boom
 
+21st Mar, 2015
+
+Reduce window size, also fix a minor bug which character can move a little more to the left limit of the window.
+
 ## 15th Mar, 2015
 
 Fix the bug where extra explode buff doesn't make much sense. Also, player now only can break 1 wall in the same row, which

@@ -53,7 +53,6 @@ class GameState:
         """
         boom_pos = boom.get_pos()
         limit = boom.get_limit_calculated()
-        print limit
         if player_pos[0] == boom_pos[0]:
             if player_pos[1] in range(boom_pos[1]+limit[3]*30, boom_pos[1]+limit[2]*30, 30):
                 return True
