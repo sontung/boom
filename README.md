@@ -1,6 +1,10 @@
 ## Boom
 
-21st Mar, 2015
+## 22nd Mar, 2015
+
+Add some interfaces that guide users after a game.
+
+## 21st Mar, 2015
 
 Reduce window size, also fix a minor bug which character can move a little more to the left limit of the window.
 

@@ -20,7 +20,7 @@ class GameGUI:
         self.monsters = []
         self.window_width = 570
         self.window_height = 420
-        self.information_bar_height = 120  # the height of the information bar
+        self.information_bar_height = 100  # the height of the information bar
         self.font_size = 30
         self.tile_size = 30
         self.x_margin = 78
@@ -102,6 +102,25 @@ class GameGUI:
     def set_request_open_door(self):
         self.request_open_door = True
 
+    def reset(self):
+        """
+        Reset the game GUI
+        """
+        self.buttons = []  # keeping track of number of buttons according to each scene (state)
+        self.characters = []
+        self.monsters = []
+        self.map = None
+        # this list below keeping track of the bombs these are exploding, so their
+        # explosion sprites stay for 7 frames.
+        self.redundant_time_trackers = []
+        self.pos = (self.window_width/2, self.window_height/2)  # for configuring game difficulty.
+        self.dummy_var = 0  # serves as a way to make blinking animation when the player loses all the lives.
+        self.dummy_var1 = 0  # how many frames between each monster to come out.
+        self.request_open_door = False  # True if the user press E to open the door.
+        self.done_creating_monsters = False
+        self.done_blinking_animation = False  # serves as a var to keep track if we've done the blinking animation.
+
+
     def draw(self, state):
         """
         Draw the scene.
@@ -142,12 +161,12 @@ class GameGUI:
                                                       self.sprite_sheet, self), "wall")
 
                 # Adds breakable wall sprites
-                # none_map = map_lvl_1.NONE_MAP
-                # for index_y in range(len(none_map)):
-                #     for index_x in none_map[index_y]:
-                #         if index_x is not None:
-                #             self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
-                #                                           self.sprite_sheet, self, "none"), "treasure")
+                none_map = map_lvl_1.NONE_MAP
+                for index_y in range(len(none_map)):
+                    for index_x in none_map[index_y]:
+                        if index_x is not None:
+                            self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
+                                                          self.sprite_sheet, self, "none"), "treasure")
 
                 # Adds extra live treasure sprites
                 el_map = map_lvl_1.EL_MAP
@@ -179,7 +198,7 @@ class GameGUI:
             if not self.done_creating_monsters:
                 if self.if_time_to_release_monster():
                     i = len(self.monsters)
-                    monster = Monster([270, 150], self.monster_sprite, self,
+                    monster = Monster([300, 150], self.monster_sprite, self,
                                       {"down": (0, 0), "up": (120, 0),"right": (60, 0), "left": (60, 0)}, i % 4)
                     self.monsters.append(monster)
                     self.map.add_sprites(monster, "monster")
@@ -237,6 +256,13 @@ class GameGUI:
                 self.dummy_var += 1
         elif state == "game over":
             result = self.state.get_result()
+            self.play_again = Button('Play again', self.text_color, self.tile_color,
+                                     (80, self.window_height - 50), self)
+            self.back = Button('Back to menu', self.text_color, self.tile_color,
+                               (self.window_width-80, self.window_height - 50), self)
+            self.buttons = [self.back, self.play_again]
+            self.display_surface.blit(self.back.get_sr()[0], self.back.get_sr()[1])
+            self.display_surface.blit(self.play_again.get_sr()[0], self.play_again.get_sr()[1])
             if result == "win":
                 win_sur, win_rect = self.make_text("Congratulations, You won", self.text_color, self.tile_color,
                                                    (self.window_width/2, self.window_height/2))
@@ -735,7 +761,7 @@ class Door(Sprite):
             self.frames = 3
 
     def open_the_door(self, player):
-        if player.get_key() and player.get_char().get_tile_pos() == (420, 240):
+        if player.get_key() and player.get_char().get_tile_pos() == (self.pos[0], self.pos[1]+30):
             if not self.completely_open:
                 self.update_img(str(self.prev_number + 1))
                 self.set_completely_open()

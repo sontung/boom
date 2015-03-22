@@ -10,6 +10,7 @@ class GameState:
         self.gui = _game_gui
         self.players = []
         self.result = None
+        self.done_settingGameOver = False
 
     def add_gui(self, _game_gui):
         """
@@ -17,6 +18,11 @@ class GameState:
         """
         self.gui = _game_gui
         self.update_players()
+
+    def reset(self):
+        self.result = None
+        self.players = []
+        self.done_settingGameOver = False
 
     def set_state(self, state):
         self.state = state
@@ -40,11 +46,15 @@ class GameState:
     def if_game_over(self):
         for player in self.players:
             if player.get_char().get_tile_pos() == self.gui.map.doors[0].get_pos():
-                self.set_state("game over")
-                self.set_result("win")
+                if not self.done_settingGameOver:
+                    self.set_state("game over")
+                    self.set_result("win")
+                    self.done_settingGameOver = True
             elif player.get_lives() == 0:
-                self.set_state("game over")
-                self.set_result("lose")
+                if not self.done_settingGameOver:
+                    self.set_state("game over")
+                    self.set_result("lose")
+                    self.done_settingGameOver = True
 
     def if_near_boom(self, player_pos, boom):
         """

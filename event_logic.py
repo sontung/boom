@@ -69,9 +69,16 @@ class EventLogic:
         if event.type == MOUSEBUTTONUP:
             if self._game_state.get_state() == "welcome":
                 if self._game_gui.new.get_rect().collidepoint(event.pos):
+                    self._game_gui.reset()
+                    self._game_state.reset()
                     self._game_state.set_state("new game")
-                    self._game_gui.draw(self._game_state.get_state())
-                    pygame.display.update()
+            elif self._game_state.get_state() == "game over":
+                if self._game_gui.back.get_rect().collidepoint(event.pos):
+                    self._game_state.set_state("welcome")
+                elif self._game_gui.play_again.get_rect().collidepoint(event.pos):
+                    self._game_gui.reset()
+                    self._game_state.reset()
+                    self._game_state.set_state("new game")
 
         elif event.type == MOUSEMOTION or event.type == NOEVENT:
             if self._game_gui.buttons:
@@ -89,29 +96,32 @@ class EventLogic:
                 self.quit()
 
             elif event.key in [K_UP, K_DOWN, K_LEFT, K_RIGHT]:
-                while pygame.key.get_pressed()[event.key]:
-                    for sprite in self._game_gui.get_characters():
-                        sprite.increment_pos(self.movement[event.key])
-                        self._game_gui.draw("new game")
-                        pygame.display.update()
-                        pygame.time.wait(20)
-                        sprite.increment_pos(self.movement[event.key])
-                        self._game_gui.draw("new game")
-                        pygame.display.update()
-                        pygame.time.wait(20)
-                        sprite.increment_pos(self.movement[event.key])
-                        self._game_gui.draw("new game")
-                        pygame.display.update()
-                    pygame.time.wait(100)
-                    self.event_handler()
+                if self._game_state.get_state() == "new game":
+                    while pygame.key.get_pressed()[event.key]:
+                        for sprite in self._game_gui.get_characters():
+                            sprite.increment_pos(self.movement[event.key])
+                            self._game_gui.draw("new game")
+                            pygame.display.update()
+                            pygame.time.wait(20)
+                            sprite.increment_pos(self.movement[event.key])
+                            self._game_gui.draw("new game")
+                            pygame.display.update()
+                            pygame.time.wait(20)
+                            sprite.increment_pos(self.movement[event.key])
+                            self._game_gui.draw("new game")
+                            pygame.display.update()
+                        pygame.time.wait(100)
+                        self.event_handler()
 
             elif event.key == K_SPACE:
-                char_pos = self._game_gui.characters[0].get_pos()[0]-4, self._game_gui.characters[0].get_pos()[1]
-                boom = self._game_gui.create_boom(char_pos)
-                self._game_gui.map.add_sprites(boom, "bomb")
-                boom_trigger = TimeTracking(2, boom)
-                self.time_trackers.append(boom_trigger)
-                pygame.display.update()
+                if self._game_state.get_state() == "new game":
+                    char_pos = self._game_gui.characters[0].get_pos()[0]-4, self._game_gui.characters[0].get_pos()[1]
+                    boom = self._game_gui.create_boom(char_pos)
+                    self._game_gui.map.add_sprites(boom, "bomb")
+                    boom_trigger = TimeTracking(2, boom)
+                    self.time_trackers.append(boom_trigger)
+                    pygame.display.update()
 
             elif event.key == K_e:
-                self._game_gui.set_request_open_door()
+                if self._game_state.get_state() == "new game":
+                    self._game_gui.set_request_open_door()
