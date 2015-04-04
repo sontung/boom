@@ -6,11 +6,11 @@ import map_lvl_1
 
 
 class GameGUI:
-    def __init__(self, _game_logic, _game_state):
+    def __init__(self, _game_state):
         pygame.init()
+        self.sound = None
         self.buttons = []  # keeping track of number of buttons according to each scene (state)
         self.state = _game_state
-        self.logic = _game_logic
         self.sprite_sheet = pygame.image.load("assets\images\sprites_sheet_main.png")
         self.monster_sprite = pygame.image.load("assets\images\monster.png")
         self.door_sprite = pygame.image.load("assets\images\doors.png")
@@ -56,6 +56,9 @@ class GameGUI:
         self.request_open_door = False  # True if the user press E to open the door.
         self.done_creating_monsters = False
         self.done_blinking_animation = False  # serves as a var to keep track if we've done the blinking animation.
+
+    def add_sound(self, _sound):
+        self.sound = _sound
 
     def make_text(self, text, color, bg_color, center):
         """
@@ -119,7 +122,6 @@ class GameGUI:
         self.request_open_door = False  # True if the user press E to open the door.
         self.done_creating_monsters = False
         self.done_blinking_animation = False  # serves as a var to keep track if we've done the blinking animation.
-
 
     def draw(self, state):
         """
@@ -215,7 +217,7 @@ class GameGUI:
                     monster.move()
             if self.request_open_door:
                 for door in self.map.doors:
-                    door.open_the_door(self.state.get_players()[0])
+                    door.open_the_door(self.state.get_players()[0], self.sound)
             self.state.track_players_monsters()
 
             # I want some sprites stay longer than 1 frame (actually 7 frames) so I add this for loop here
@@ -745,6 +747,7 @@ class Door(Sprite):
         self.frames = 3  # how many frames each sprite lasts
         self.prev_number = 0  # the previous sprite index in the sheet
         self.completely_open = False
+        self.if_playing_sound = False
 
     def set_completely_open(self):
         if self.prev_number == 10:
@@ -760,8 +763,13 @@ class Door(Sprite):
             self.prev_number += 1
             self.frames = 3
 
-    def open_the_door(self, player):
+    def open_the_door(self, player, sound):
         if player.get_key() and player.get_char().get_tile_pos() == (self.pos[0], self.pos[1]+30):
+            if not self.if_playing_sound:
+                sound.set_state(6)
+                sound.play_sound()
+                sound.force_play()
+                self.if_playing_sound = True
             if not self.completely_open:
                 self.update_img(str(self.prev_number + 1))
                 self.set_completely_open()

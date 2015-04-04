@@ -1,5 +1,9 @@
 ## Boom
 
+## 4th April, 2015
+
+Add some nice sound effects.
+
 ## 22nd Mar, 2015
 
 Add some interfaces that guide users after a game.

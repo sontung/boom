@@ -5,12 +5,21 @@ class GameState:
     """
     The game state
     """
-    def __init__(self, _game_gui=None):
+    def __init__(self, _game_sound=None, _game_gui=None):
         self.state = "welcome"
         self.gui = _game_gui
+        self.sound = _game_sound
         self.players = []
         self.result = None
         self.done_settingGameOver = False
+
+    def play_sound(self):
+        if self.state == "welcome":
+            self.sound.set_state(0)
+            self.sound.play_sound()
+        elif self.state == "game over":
+            self.sound.set_state(3)
+            self.sound.play_sound()
 
     def add_gui(self, _game_gui):
         """
@@ -18,6 +27,9 @@ class GameState:
         """
         self.gui = _game_gui
         self.update_players()
+
+    def add_sound(self, _game_sound):
+        self.sound = _game_sound
 
     def reset(self):
         self.result = None
@@ -102,10 +114,13 @@ class GameState:
         treasures = self.gui.map.get_treasures()
         for player in self.players:
             for treasure in treasures:
-                if treasure.ready_to_eat():
+                if treasure.ready_to_eat() and treasure.var_buff != "none":
                     pos = player.get_char().get_pos()[0]-4, player.get_char().get_pos()[1]
                     if pos == treasure.get_pos():
                         treasure.buff(player)
+                        self.sound.set_state(4)
+                        self.sound.play_sound()
+                        self.sound.force_play()
                         self.gui.map.remove_sprite(treasure, "treasure")
 
     def track_players_monsters(self):
@@ -115,6 +130,14 @@ class GameState:
         for player in self.players:
             if self.if_near_monster(player.get_char().get_pos()) and not player.if_immortal():
                 player.update_lives(-1)
+                if player.get_lives() == 0:
+                    self.sound.set_state(8)
+                    self.sound.play_sound()
+                    self.sound.force_play()
+                else:
+                    self.sound.set_state(7)
+                    self.sound.play_sound()
+                    self.sound.force_play()
                 player.set_time_dead()
                 self.gui.set_doneBlinkingAnimation(False)
 
@@ -125,11 +148,22 @@ class GameState:
         for player in self.players:
             if self.if_near_boom(player.get_char().get_tile_pos(), boom) and not player.if_immortal():
                 player.update_lives(-1)
+                if player.get_lives() == 0:
+                    self.sound.set_state(8)
+                    self.sound.play_sound()
+                    self.sound.force_play()
+                else:
+                    self.sound.set_state(7)
+                    self.sound.play_sound()
+                    self.sound.force_play()
                 player.set_time_dead()
                 self.gui.set_doneBlinkingAnimation(False)
             for monster in self.gui.monsters:
                 if self.if_near_boom(monster.get_pos(), boom):
                     monster.die()
+                    self.sound.set_state(5)
+                    self.sound.play_sound()
+                    self.sound.force_play()
                     self.gui.map.remove_sprite(monster)
 
 

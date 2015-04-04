@@ -37,10 +37,9 @@ class TimeTracking:
 
 
 class EventLogic:
-    def __init__(self, _game_state, _game_gui, _game_logic=None, _sound=None):
+    def __init__(self, _game_state, _game_gui, _sound):
         self._game_state = _game_state
         self._game_gui = _game_gui
-        self._game_logic = _game_logic
         self._sound = _sound
         self.number_of_handler_executions = 0
         self.movement = {
@@ -58,6 +57,9 @@ class EventLogic:
     def event_handler(self):
         for time_tracker in self.time_trackers:
             if time_tracker.trigger(time_tracker.get_sprite().explode):
+                self._sound.set_state(2)
+                self._sound.play_sound()
+                self._sound.force_play()
                 self._game_state.track_players_bombs(time_tracker.get_sprite())
                 self._game_state.track_treasures(time_tracker.get_sprite())
                 time_tracker.set_time(0.3)
@@ -72,6 +74,7 @@ class EventLogic:
                     self._game_gui.reset()
                     self._game_state.reset()
                     self._game_state.set_state("new game")
+                    self._sound.stop_sound()
             elif self._game_state.get_state() == "game over":
                 if self._game_gui.back.get_rect().collidepoint(event.pos):
                     self._game_state.set_state("welcome")
@@ -92,7 +95,6 @@ class EventLogic:
 
         elif event.type == KEYDOWN:
             if event.key == K_ESCAPE:
-                self._sound.play_beep()
                 self.quit()
 
             elif event.key in [K_UP, K_DOWN, K_LEFT, K_RIGHT]:
