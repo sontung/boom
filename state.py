@@ -1,4 +1,5 @@
 import time
+import event_logic
 
 
 class GameState:
@@ -11,6 +12,8 @@ class GameState:
         self.sound = _game_sound
         self.players = []
         self.result = None
+        self.time_tracker = None
+        self.done_creatingTimeTrackers = False
         self.done_settingGameOver = False
 
     def play_sound(self):
@@ -18,8 +21,12 @@ class GameState:
             self.sound.set_state(0)
             self.sound.play_sound()
         elif self.state == "game over":
-            self.sound.set_state(3)
-            self.sound.play_sound()
+            if self.result == "lose":
+                self.sound.set_state(3)
+                self.sound.play_sound()
+            elif self.result == "win":
+                self.sound.set_state(9)
+                self.sound.play_sound()
 
     def add_gui(self, _game_gui):
         """
@@ -58,15 +65,27 @@ class GameState:
     def if_game_over(self):
         for player in self.players:
             if player.get_char().get_tile_pos() == self.gui.map.doors[0].get_pos():
-                if not self.done_settingGameOver:
+                if not self.done_creatingTimeTrackers:
+                    self.time_tracker = event_logic.TimeTracking(2, None)
+                    self.time_tracker.set_time(1)
+                    self.done_creatingTimeTrackers = True
+                if not self.done_settingGameOver and self.time_tracker.time_up():
                     self.set_state("game over")
                     self.set_result("win")
                     self.done_settingGameOver = True
+                    self.time_tracker = None
+                    self.done_creatingTimeTrackers = False
             elif player.get_lives() == 0:
-                if not self.done_settingGameOver:
+                if not self.done_creatingTimeTrackers:
+                    self.time_tracker = event_logic.TimeTracking(2, None)
+                    self.time_tracker.set_time(3)
+                    self.done_creatingTimeTrackers = True
+                if not self.done_settingGameOver and self.time_tracker.time_up():
                     self.set_state("game over")
                     self.set_result("lose")
                     self.done_settingGameOver = True
+                    self.time_tracker = None
+                    self.done_creatingTimeTrackers = False
 
     def if_near_boom(self, player_pos, boom):
         """

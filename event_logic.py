@@ -78,10 +78,12 @@ class EventLogic:
             elif self._game_state.get_state() == "game over":
                 if self._game_gui.back.get_rect().collidepoint(event.pos):
                     self._game_state.set_state("welcome")
+                    self._sound.stop_sound()
                 elif self._game_gui.play_again.get_rect().collidepoint(event.pos):
                     self._game_gui.reset()
                     self._game_state.reset()
                     self._game_state.set_state("new game")
+                    self._sound.stop_sound()
 
         elif event.type == MOUSEMOTION or event.type == NOEVENT:
             if self._game_gui.buttons:

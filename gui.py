@@ -19,7 +19,7 @@ class GameGUI:
         self.characters = []
         self.monsters = []
         self.window_width = 570
-        self.window_height = 420
+        self.window_height = 430
         self.information_bar_height = 100  # the height of the information bar
         self.font_size = 30
         self.tile_size = 30
@@ -163,12 +163,12 @@ class GameGUI:
                                                       self.sprite_sheet, self), "wall")
 
                 # Adds breakable wall sprites
-                none_map = map_lvl_1.NONE_MAP
-                for index_y in range(len(none_map)):
-                    for index_x in none_map[index_y]:
-                        if index_x is not None:
-                            self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
-                                                          self.sprite_sheet, self, "none"), "treasure")
+                # none_map = map_lvl_1.NONE_MAP
+                # for index_y in range(len(none_map)):
+                #     for index_x in none_map[index_y]:
+                #         if index_x is not None:
+                #             self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
+                #                                           self.sprite_sheet, self, "none"), "treasure")
 
                 # Adds extra live treasure sprites
                 el_map = map_lvl_1.EL_MAP
@@ -197,6 +197,7 @@ class GameGUI:
                 # Add door sprite
                 self.map.add_sprites(Door((270, 150), self.door_sprite, self), "door")
 
+            # Add monsters
             if not self.done_creating_monsters:
                 if self.if_time_to_release_monster():
                     i = len(self.monsters)
@@ -233,11 +234,13 @@ class GameGUI:
 
             lives_sur, lives_rect = self.make_text("Lives: %d" % self.state.get_players()[0].get_lives(),
                                                    self.text_color, self.tile_color,
-                                                   (60,self.window_height-self.information_bar_height+30))
+                                                   (60, self.window_height-self.information_bar_height+30))
             self.display_surface.blit(lives_sur, lives_rect)
+
+            # Display character
             if self.state.get_players()[0].get_lives() == 3:
                 self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
-            elif self.state.get_players()[0].get_lives() >= 0:
+            elif self.state.get_players()[0].get_lives() > 0:
                 if not self.done_blinking_animation:
                     pygame.time.wait(100)
                     if self.dummy_var % 2 == 0:
@@ -254,8 +257,8 @@ class GameGUI:
                     self.display_surface.blit(self.main_character.get_img(), tuple(self.main_character.get_pos()))
                 if self.dummy_var == 9:
                     self.dummy_var = 0
-                    self.state.get_players()[0].reset_lives()
                 self.dummy_var += 1
+
         elif state == "game over":
             result = self.state.get_result()
             self.play_again = Button('Play again', self.text_color, self.tile_color,

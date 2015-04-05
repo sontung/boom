@@ -1,5 +1,12 @@
 ## Boom
 
+## 5th April, 2015
+
+Fix bugs. First is the lower limit of the screen doesn't display right (It causes the issue that player cannot get to the
+lower limit). Second is the ending sound playing over and over again even though player has switched to other state. Last
+thing is the explosion sound effect seems to interrupt the death sound effect (lowering the volume is the solution). Also,
+some music is played when player win the game.
+
 ## 4th April, 2015
 
 Add some nice sound effects.

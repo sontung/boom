@@ -11,6 +11,7 @@ if __name__ == "__main__":
     game_gui = gui.GameGUI(game_state)
     game_sound = sound.Sound()
     game_gui.add_sound(game_sound)
+    game_state.set_state("new game")
     game_state.add_gui(game_gui)
     game_state.add_sound(game_sound)
     game_event_handler = event_logic.EventLogic(game_state, game_gui, game_sound)
