@@ -1,0 +1,5 @@
+Try to find the key to the door
+located in the map.Once you find
+the key, try to reach the tile
+under the door and press E, then
+go in and you'll win the game. Simple!

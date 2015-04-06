@@ -75,6 +75,15 @@ class EventLogic:
                     self._game_state.reset()
                     self._game_state.set_state("new game")
                     self._sound.stop_sound()
+                elif self._game_gui.help.get_rect().collidepoint(event.pos):
+                    self._game_state.set_state("help")
+                elif self._game_gui.author.get_rect().collidepoint(event.pos):
+                    self._game_state.set_state("author")
+                elif self._game_gui.quit.get_rect().collidepoint(event.pos):
+                    self.quit()
+            elif self._game_state.get_state() in ["help", "author"]:
+                if self._game_gui.back.get_rect().collidepoint(event.pos):
+                    self._game_state.set_state("welcome")
             elif self._game_state.get_state() == "game over":
                 if self._game_gui.back.get_rect().collidepoint(event.pos):
                     self._game_state.set_state("welcome")

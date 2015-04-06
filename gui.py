@@ -3,6 +3,7 @@ import random
 import copy
 import event_logic
 import map_lvl_1
+import sys
 
 
 class GameGUI:
@@ -129,22 +130,58 @@ class GameGUI:
         """
         self.display_surface.fill(self.bg_color)
         if state == "welcome":
+            start_point = 100
             self.setting = Button('Settings', self.text_color, self.tile_color,
-                                  (self.window_width/2, self.window_height/2), self)
+                                  (self.window_width/2, start_point+60), self)
             self.new = Button('New Game', self.text_color, self.tile_color,
-                              (self.window_width/2, self.window_height/2-60), self)
+                              (self.window_width/2, start_point), self)
             self.quit = Button('Quit', self.text_color, self.tile_color,
-                               (self.window_width/2, self.window_height/2+180), self)
+                               (self.window_width/2, start_point+60*4), self)
             self.help = Button('How to play', self.text_color, self.tile_color,
-                               (self.window_width/2, self.window_height/2+60), self)
+                               (self.window_width/2, start_point+60*2), self)
             self.author = Button('About the author', self.text_color, self.tile_color,
-                                 (self.window_width/2, self.window_height/2+120), self)
+                                 (self.window_width/2, start_point+60*3), self)
             self.buttons = [self.new, self.setting, self.quit, self.help, self.author]
             self.display_surface.blit(self.setting.get_sr()[0], self.setting.get_sr()[1])
             self.display_surface.blit(self.new.get_sr()[0], self.new.get_sr()[1])
             self.display_surface.blit(self.quit.get_sr()[0], self.quit.get_sr()[1])
             self.display_surface.blit(self.help.get_sr()[0], self.help.get_sr()[1])
             self.display_surface.blit(self.author.get_sr()[0], self.author.get_sr()[1])
+
+        elif state == "help":
+            sys.stdin = open("instruction.txt")
+            for i in range(9):
+                instructions = sys.stdin.readline().strip()
+                self.instructions_sur, self.instructions_rect = self.make_text(instructions, self.colors["black"],
+                                                                               self.tile_color,
+                                                                               (self.window_width/2,
+                                                                                self.window_height/2-120+i*35))
+                self.display_surface.blit(self.instructions_sur, self.instructions_rect)
+            self.back = Button("Back", self.text_color, self.tile_color,
+                               (self.window_width-60, self.window_height/8), self)
+            self.buttons = [self.back]
+            self.display_surface.blit(self.back.get_sr()[0], self.back.get_sr()[1])
+
+        elif state == "author":
+            sys.stdin = open("author.txt")
+            for i in range(8):
+                if i == 0:
+                    instructions = sys.stdin.readline().strip()
+                    self.instructions_sur, self.instructions_rect = self.make_text(instructions, self.colors["green"],
+                                                                                   self.tile_color,
+                                                                                   (self.window_width/2,
+                                                                                    self.window_height/2-180+i*35))
+                    self.display_surface.blit(self.instructions_sur, self.instructions_rect)
+                else:
+                    instructions = sys.stdin.readline().strip()
+                    self.instructions_sur, self.instructions_rect = self.make_text(instructions, self.colors["black"],
+                                                                                   self.tile_color,
+                                                                                   (self.window_width/2,
+                                                                                    self.window_height/2-120+i*35))
+                    self.display_surface.blit(self.instructions_sur, self.instructions_rect)
+            self.back = Button("Back", self.text_color, self.tile_color, (self.window_width-60, self.window_height/8), self)
+            self.buttons = [self.back]
+            self.display_surface.blit(self.back.get_sr()[0], self.back.get_sr()[1])
 
         elif state == "new game":
             if not self.characters:
@@ -163,12 +200,12 @@ class GameGUI:
                                                       self.sprite_sheet, self), "wall")
 
                 # Adds breakable wall sprites
-                # none_map = map_lvl_1.NONE_MAP
-                # for index_y in range(len(none_map)):
-                #     for index_x in none_map[index_y]:
-                #         if index_x is not None:
-                #             self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
-                #                                           self.sprite_sheet, self, "none"), "treasure")
+                none_map = map_lvl_1.NONE_MAP
+                for index_y in range(len(none_map)):
+                    for index_x in none_map[index_y]:
+                        if index_x is not None:
+                            self.map.add_sprites(Treasure((index_x*self.tile_size, index_y*self.tile_size),
+                                                          self.sprite_sheet, self, "none"), "treasure")
 
                 # Adds extra live treasure sprites
                 el_map = map_lvl_1.EL_MAP

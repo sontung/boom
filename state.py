@@ -41,6 +41,8 @@ class GameState:
     def reset(self):
         self.result = None
         self.players = []
+        self.time_tracker = None
+        self.done_creatingTimeTrackers = False
         self.done_settingGameOver = False
 
     def set_state(self, state):
@@ -73,10 +75,9 @@ class GameState:
                     self.set_state("game over")
                     self.set_result("win")
                     self.done_settingGameOver = True
-                    self.time_tracker = None
-                    self.done_creatingTimeTrackers = False
             elif player.get_lives() == 0:
                 if not self.done_creatingTimeTrackers:
+                    print "creating"
                     self.time_tracker = event_logic.TimeTracking(2, None)
                     self.time_tracker.set_time(3)
                     self.done_creatingTimeTrackers = True
@@ -84,8 +85,6 @@ class GameState:
                     self.set_state("game over")
                     self.set_result("lose")
                     self.done_settingGameOver = True
-                    self.time_tracker = None
-                    self.done_creatingTimeTrackers = False
 
     def if_near_boom(self, player_pos, boom):
         """

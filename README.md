@@ -1,5 +1,10 @@
 ## Boom
 
+## 6th April, 2015
+
+Add some guidance and information about author. Demo released! Download 
+[here](https://www.dropbox.com/s/xxrstyr6ek77e2l/boom_excutable.rar?dl=0), run **boom.exe** and enjoy!
+
 ## 5th April, 2015
 
 Fix bugs. First is the lower limit of the screen doesn't display right (It causes the issue that player cannot get to the
